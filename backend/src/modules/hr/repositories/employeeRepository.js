@@ -34,8 +34,35 @@ export function findDepartmentById(id) {
   return prisma.department.findUnique({ where: { id } });
 }
 
+export function findDepartmentByName(name) {
+  return prisma.department.findFirst({ where: { name } });
+}
+
 export function findAllDepartments() {
-  return prisma.department.findMany({ orderBy: { name: 'asc' } });
+  return prisma.department.findMany({ 
+    orderBy: { name: 'asc' },
+    include: {
+      employees: {
+        select: { id: true }
+      }
+    }
+  });
+}
+
+export function createDepartment(data) {
+  return prisma.department.create({ data });
+}
+
+export function updateDepartment(id, data) {
+  return prisma.department.update({ where: { id }, data });
+}
+
+export function deleteDepartment(id) {
+  return prisma.department.delete({ where: { id } });
+}
+
+export function findEmployeesByDepartment(departmentId) {
+  return prisma.employee.findMany({ where: { departmentId } });
 }
 
 export function findAllSkills() {
@@ -217,6 +244,114 @@ export function getAllSkills() {
             select: { id: true, firstName: true, lastName: true, email: true } 
           } 
         } 
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+}
+
+// Admin Skills Management Functions
+export function findSkillByIdWithDetails(id) {
+  return prisma.skill.findUnique({
+    where: { id },
+    include: {
+      skillLevels: { orderBy: { level: 'asc' } },
+      _count: {
+        select: {
+          employees: true,
+          jobPostings: true,
+          certifications: true,
+        }
+      }
+    }
+  });
+}
+
+export function findSkillByName(name) {
+  return prisma.skill.findFirst({
+    where: { name: { equals: name, mode: 'insensitive' } }
+  });
+}
+
+export function createSkill(data) {
+  return prisma.skill.create({
+    data: {
+      name: data.name,
+      description: data.description || null,
+      category: data.category || null,
+      subcategory: data.subcategory || null,
+      isRequired: data.isRequired || false,
+    },
+    include: {
+      skillLevels: true,
+    }
+  });
+}
+
+export function updateSkill(id, data) {
+  const updateData = {};
+  
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.description !== undefined) updateData.description = data.description || null;
+  if (data.category !== undefined) updateData.category = data.category || null;
+  if (data.subcategory !== undefined) updateData.subcategory = data.subcategory || null;
+  if (data.isRequired !== undefined) updateData.isRequired = data.isRequired;
+  
+  return prisma.skill.update({
+    where: { id },
+    data: updateData,
+    include: {
+      skillLevels: { orderBy: { level: 'asc' } },
+    }
+  });
+}
+
+export function deleteSkill(id) {
+  return prisma.$transaction(async (tx) => {
+    // Check if skill is being used
+    const skillAssignments = await tx.skillAssignment.count({ where: { skillId: id } });
+    const jobPostingSkills = await tx.jobPostingSkill.count({ where: { skillId: id } });
+    const certificationSkills = await tx.certificationSkill.count({ where: { skillId: id } });
+    
+    if (skillAssignments > 0 || jobPostingSkills > 0 || certificationSkills > 0) {
+      const error = new Error('Cannot delete skill: it is being used by employees, job postings, or certifications');
+      error.statusCode = 400;
+      error.code = 'SKILL_IN_USE';
+      throw error;
+    }
+    
+    // Delete skill levels first
+    await tx.skillLevel.deleteMany({ where: { skillId: id } });
+    
+    // Then delete the skill
+    return tx.skill.delete({ where: { id } });
+  });
+}
+
+export function listSkillsWithFilters({ category, subcategory, search, isRequired } = {}) {
+  const where = {
+    AND: [
+      category ? { category } : {},
+      subcategory ? { subcategory } : {},
+      typeof isRequired === 'boolean' ? { isRequired } : {},
+      search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ]
+      } : {},
+    ]
+  };
+  
+  return prisma.skill.findMany({
+    where,
+    include: {
+      skillLevels: { orderBy: { level: 'asc' } },
+      _count: {
+        select: {
+          employees: true,
+          jobPostings: true,
+        }
       }
     },
     orderBy: { name: 'asc' }

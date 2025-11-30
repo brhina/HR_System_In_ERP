@@ -11,7 +11,8 @@ import {
   CandidateForm,
   ScoreModal,
   InterviewScheduler,
-  HireModal
+  HireModal,
+  ShareLinkModal
 } from './components/recuirementComponents';
 
 
@@ -28,6 +29,7 @@ const RecruitmentDetail = () => {
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showInterviewScheduler, setShowInterviewScheduler] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   // Selected items
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -147,8 +149,12 @@ const RecruitmentDetail = () => {
   };
   
   const handleShare = () => {
-    // TODO: Implement share functionality
-    console.log('Share job posting');
+    setShowShareModal(true);
+  };
+
+  const handleLinkGenerated = (updatedJob) => {
+    // Refetch job posting to get updated publicToken
+    refetchAll();
   };
   
   const handleDownload = () => {
@@ -285,6 +291,13 @@ const RecruitmentDetail = () => {
         departments={[]} // TODO: Fetch departments
         managers={[]} // TODO: Fetch managers
         isLoading={isHiring}
+      />
+
+      <ShareLinkModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        jobPosting={jobPosting}
+        onLinkGenerated={handleLinkGenerated}
       />
     </motion.div>
   );

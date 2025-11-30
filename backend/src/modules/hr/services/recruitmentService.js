@@ -12,6 +12,14 @@ export function getJobPostingById(id) {
   return repo.findJobPostingById(id);
 }
 
+export function getJobPostingByPublicToken(publicToken) {
+  return repo.findJobPostingByPublicToken(publicToken);
+}
+
+export function generatePublicTokenForJob(jobId) {
+  return repo.generatePublicTokenForJob(jobId);
+}
+
 export function updateJobPostingById(id, data) {
   return repo.updateJobPostingByIdWithSkills(id, data);
 }
@@ -132,6 +140,31 @@ export async function createCandidateForJobWithGuards(jobId, data) {
     throw error;
   }
   return repo.createCandidateForJob(jobId, data);
+}
+
+// Public application (no auth required)
+export async function createPublicApplication(publicToken, data) {
+  const job = await repo.findJobPostingByPublicToken(publicToken);
+  if (!job) {
+    const error = new Error(`Job posting not found`);
+    error.statusCode = 404;
+    error.code = 'JOB_NOT_FOUND';
+    throw error;
+  }
+  if (!job.isActive) {
+    const error = new Error(`This job posting is no longer accepting applications`);
+    error.statusCode = 400;
+    error.code = 'JOB_INACTIVE';
+    throw error;
+  }
+  const duplicate = await repo.findCandidateByEmailForJob(job.id, data.email);
+  if (duplicate) {
+    const error = new Error(`You have already applied to this position`);
+    error.statusCode = 409;
+    error.code = 'CANDIDATE_DUPLICATE';
+    throw error;
+  }
+  return repo.createCandidateForJob(job.id, data);
 }
 
 const VALID_STAGES = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"];

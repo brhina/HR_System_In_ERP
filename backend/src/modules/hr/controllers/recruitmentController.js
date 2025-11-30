@@ -307,4 +307,38 @@ export async function removeCandidateDocument(req, res, next) {
   }
 }
 
+// Public endpoints (no authentication required)
+export async function getPublicJobPosting(req, res, next) {
+  try {
+    const job = await service.getJobPostingByPublicToken(req.params.token);
+    if (!job) return res.status(404).json(response.error("Job posting not found", 404));
+    res.json(response.success(job));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createPublicApplication(req, res, next) {
+  try {
+    const applicationData = {
+      ...req.body,
+      resumeUrl: req.file ? `/uploads/${req.file.filename}` : req.body.resumeUrl,
+    };
+    await validate(v.createCandidateSchema, { body: applicationData });
+    const candidate = await service.createPublicApplication(req.params.token, applicationData);
+    res.status(201).json(response.success(candidate, "Application submitted successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function generatePublicLink(req, res, next) {
+  try {
+    const job = await service.generatePublicTokenForJob(req.params.id);
+    res.json(response.success(job, "Public link generated successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+
 

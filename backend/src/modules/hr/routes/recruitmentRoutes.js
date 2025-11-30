@@ -36,13 +36,18 @@ const upload = multer({
   }
 });
 
-// Apply authentication to all routes
+// Public routes (no authentication required)
+router.get("/public/jobs/:token", controller.getPublicJobPosting);
+router.post("/public/jobs/:token/apply", upload.single("resume"), controller.createPublicApplication);
+
+// Apply authentication to all routes below
 router.use(authenticateToken);
 
 // Job postings - require recruitment permissions
 router.get("/jobs", requirePermission("recruitment:read"), controller.listJobPostings);
 router.post("/jobs", requirePermission("recruitment:create"), controller.createJobPosting);
 router.get("/jobs/:id", requirePermission("recruitment:read"), controller.getJobPostingById);
+router.post("/jobs/:id/generate-link", requirePermission("recruitment:read"), controller.generatePublicLink);
 router.put("/jobs/:id", requirePermission("recruitment:update"), controller.updateJobPostingById);
 router.patch("/jobs/:id/archive", requirePermission("recruitment:update"), controller.archiveJobPostingById);
 router.delete("/jobs/:id", requirePermission("recruitment:delete"), controller.deleteJobPostingById);

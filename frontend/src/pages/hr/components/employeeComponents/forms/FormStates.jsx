@@ -138,11 +138,45 @@ const FormErrorDisplay = ({
                 Validation Errors
               </h3>
               <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                {Object.entries(validationErrors).map(([field, error]) => (
-                  <li key={field}>
-                    • {error.message || error}
-                  </li>
-                ))}
+                {(() => {
+                  // Flatten nested error objects
+                  const flattenErrors = (errors, prefix = '') => {
+                    const result = [];
+                    for (const [key, value] of Object.entries(errors)) {
+                      const fieldName = prefix ? `${prefix}.${key}` : key;
+                      
+                      if (value && typeof value === 'object') {
+                        // Check if it's an error object with a message
+                        if ('message' in value && typeof value.message === 'string') {
+                          result.push({ field: fieldName, message: value.message });
+                        } else if (Array.isArray(value)) {
+                          // Handle array of errors
+                          value.forEach((error, index) => {
+                            if (typeof error === 'string') {
+                              result.push({ field: `${fieldName}[${index}]`, message: error });
+                            } else if (error?.message) {
+                              result.push({ field: `${fieldName}[${index}]`, message: error.message });
+                            }
+                          });
+                        } else {
+                          // Recursively flatten nested objects
+                          result.push(...flattenErrors(value, fieldName));
+                        }
+                      } else if (typeof value === 'string') {
+                        result.push({ field: fieldName, message: value });
+                      }
+                    }
+                    return result;
+                  };
+                  
+                  const flatErrors = flattenErrors(validationErrors);
+                  
+                  return flatErrors.map(({ field, message }) => (
+                    <li key={field}>
+                      • <strong>{field}:</strong> {message}
+                    </li>
+                  ));
+                })()}
               </ul>
             </div>
           </div>

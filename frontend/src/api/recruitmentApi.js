@@ -130,6 +130,15 @@ export const recruitmentApi = {
   removeCandidateDocument: (candidateId, documentId) => {
     return apiClient.delete(`/hr/recruitment/candidates/${candidateId}/documents/${documentId}`);
   },
+
+  // Public Link Operations
+  generatePublicLink: (jobId) => {
+    return apiClient.post(`/hr/recruitment/jobs/${jobId}/generate-link`);
+  },
+
+  getPublicJobPosting: (token) => {
+    return apiClient.get(`/hr/recruitment/public/jobs/${token}`);
+  },
 };
 
 // Utility functions for recruitment data

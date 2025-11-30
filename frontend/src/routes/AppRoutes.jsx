@@ -29,6 +29,7 @@ import RecruitmentDetail from '../pages/hr/RecruitmentDetail';
 import JobCandidatesView from '../pages/hr/JobCandidatesView';
 import GlobalCandidatesManagement from '../pages/hr/GlobalCandidatesManagement';
 import InterviewsManagement from '../pages/hr/InterviewsManagement';
+import PublicJobApplication from '../pages/hr/PublicJobApplication';
 
 // Analytics Pages
 import AnalyticsDashboard from '../pages/analytics/AnalyticsDashboard';
@@ -47,6 +48,9 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import UserManagement from '../pages/admin/UserManagement';
 import RolePermissions from '../pages/admin/RolePermissions';
 import SystemSettings from '../pages/admin/SystemSettings';
+import DepartmentManagement from '../pages/admin/DepartmentManagement';
+import ManagerAssignment from '../pages/admin/ManagerAssignment';
+import SkillsManagement from '../pages/admin/SkillsManagement';
 
 // Profile Page
 import Profile from '../pages/profile/Profile';
@@ -119,6 +123,10 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route
+        path="/apply/:token"
+        element={<PublicJobApplication />}
+      />
       <Route
         path="/login"
         element={
@@ -411,6 +419,36 @@ function AppRoutes() {
           <ProtectedRoute requiredPermissions={['admin:manage_system']}>
             <DashboardLayout>
               <SystemSettings />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/departments"
+        element={
+          <ProtectedRoute requiredPermissions={['employee:update']}>
+            <DashboardLayout>
+              <DepartmentManagement />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/managers"
+        element={
+          <ProtectedRoute requiredPermissions={['employee:update']}>
+            <DashboardLayout>
+              <ManagerAssignment />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/skills"
+        element={
+          <ProtectedRoute requiredPermissions={['admin:manage_system']}>
+            <DashboardLayout>
+              <SkillsManagement />
             </DashboardLayout>
           </ProtectedRoute>
         }

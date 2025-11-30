@@ -23,3 +23,4 @@ export { default as ScoreModal } from '../employeeComponents/employee/ScoreModal
 export { default as HireModal } from '../employeeComponents/employee/HireModal';
 export { default as JobPostingHeader } from './JobPostingHeader';
 export { default as CandidatesSection } from './CandidatesSection';
+export { default as ShareLinkModal } from './ShareLinkModal';

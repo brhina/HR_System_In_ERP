@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Shield,
   LogOut,
+  Building,
 } from 'lucide-react';
 
 /**
@@ -179,6 +180,18 @@ export const NAVIGATION_ITEMS = [
         href: '/admin/settings',
         icon: Settings,
         permission: 'admin:manage_system',
+      },
+      {
+        name: 'Departments',
+        href: '/admin/departments',
+        icon: Building,
+        permission: 'employee:update',
+      },
+      {
+        name: 'Manager Assignment',
+        href: '/admin/managers',
+        icon: UserCheck,
+        permission: 'employee:update',
       },
     ],
   },

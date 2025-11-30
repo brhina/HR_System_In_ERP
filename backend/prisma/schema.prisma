@@ -273,6 +273,7 @@ model JobPosting {
   department   Department   @relation(fields: [departmentId], references: [id])
   departmentId String
   isActive     Boolean      @default(true)
+  publicToken  String?      @unique // Unique token for public application link
   candidates   Candidate[]
   skills       JobPostingSkill[] // Skills required for this job
   createdAt    DateTime     @default(now())

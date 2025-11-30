@@ -31,14 +31,29 @@ router.get("/", requirePermission("employee:read"), controller.listEmployees);
 // Create employee - requires employee create permission
 router.post("/", requirePermission("employee:create"), controller.createEmployee);
 
-// List departments - requires employee read permission
+// Department management - requires employee update permission for create/update/delete
 router.get("/departments", requirePermission("employee:read"), controller.listDepartments);
+router.post("/departments", requirePermission("employee:update"), controller.createDepartment);
+router.put("/departments/:id", requirePermission("employee:update"), controller.updateDepartment);
+router.delete("/departments/:id", requirePermission("employee:update"), controller.deleteDepartment);
 
 // List managers - requires employee read permission
 router.get("/managers", requirePermission("employee:read"), controller.listEmployeesForManagerSelection);
 
-// List all skills - requires employee read permission
-router.get("/skills", requirePermission("employee:read"), controller.listAllSkills);
+// Skills Management Routes (must be before /:id routes)
+// List all skills with optional filters - requires employee read permission
+router.get("/skills", requirePermission("employee:read"), controller.listSkills);
+
+// Enhanced Skills Functions - require employee read permission
+router.get("/skills/all", requirePermission("employee:read"), controller.getAllSkills);
+router.get("/skills/category/:category", requirePermission("employee:read"), controller.getSkillsByCategory);
+router.get("/skills/analytics", requirePermission("employee:read"), controller.getSkillAnalytics);
+
+// Skills CRUD - require admin permissions for create/update/delete
+router.get("/skills/:id", requirePermission("employee:read"), controller.getSkillById);
+router.post("/skills", requirePermission("admin:manage_system"), controller.createSkill);
+router.put("/skills/:id", requirePermission("admin:manage_system"), controller.updateSkill);
+router.delete("/skills/:id", requirePermission("admin:manage_system"), controller.deleteSkill);
 
 // Directory search and org chart (must be before /:id routes)
 router.get("/directory/search", requirePermission("employee:read"), controller.searchDirectory);
@@ -51,19 +66,19 @@ router.get("/:id", requireEmployeeAccess(), controller.getEmployeeById);
 // Update employee - requires employee update permission or own data
 router.put("/:id", requireAnyPermission(["employee:update"]), requireEmployeeAccess(), controller.updateEmployeeById);
 
+// Assign manager - requires employee update permission
+router.post("/:id/assign-manager", requirePermission("employee:update"), controller.assignManager);
+
 // Delete employee - requires employee delete permission
 router.delete("/:id", requirePermission("employee:delete"), controller.deleteEmployeeById);
 
-// Skills - require employee access
+// Employee Skills - require employee access
 router.get("/:id/skills", requireEmployeeAccess(), controller.listEmployeeSkills);
 router.post("/:id/skills", requireAnyPermission(["employee:update"]), requireEmployeeAccess(), controller.addEmployeeSkill);
 router.put("/:id/skills/:assignmentId", requireAnyPermission(["employee:update"]), requireEmployeeAccess(), controller.updateEmployeeSkill);
 router.delete("/:id/skills/:assignmentId", requireAnyPermission(["employee:update"]), requireEmployeeAccess(), controller.removeEmployeeSkill);
 
-// Enhanced Skills Functions - require employee read permission
-router.get("/skills/all", requirePermission("employee:read"), controller.getAllSkills);
-router.get("/skills/category/:category", requirePermission("employee:read"), controller.getSkillsByCategory);
-router.get("/skills/analytics", requirePermission("employee:read"), controller.getSkillAnalytics);
+// Parameterized skill routes
 router.get("/:employeeId/skill-gap/:jobPostingId", requireEmployeeAccess(), controller.getSkillGapAnalysis);
 router.get("/:id/skill-recommendations", requireEmployeeAccess(), controller.getSkillRecommendations);
 

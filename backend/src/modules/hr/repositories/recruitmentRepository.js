@@ -1,4 +1,10 @@
 import { prisma } from "../../../config/db.js";
+import crypto from "crypto";
+
+// Generate a unique public token for job postings
+function generatePublicToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
 
 export function findJobPostings({ q, isActive } = {}) {
   const where = {
@@ -30,6 +36,7 @@ export function createJobPostingWithSkills({ title, description, departmentId, i
       description,
       departmentId,
       isActive,
+      publicToken: generatePublicToken(),
       skills: skills && skills.length > 0 ? {
         create: skills.map((s) => ({ skillId: s.skillId, required: Boolean(s.required), minLevel: Number(s.minLevel) || 1 }))
       } : undefined,
@@ -42,7 +49,36 @@ export function createJobPostingWithSkills({ title, description, departmentId, i
 }
 
 export function findJobPostingById(id) {
-  return prisma.jobPosting.findUnique({ where: { id } });
+  return prisma.jobPosting.findUnique({ 
+    where: { id },
+    include: {
+      department: true,
+      skills: { include: { skill: true } },
+      candidates: true,
+    }
+  });
+}
+
+export function findJobPostingByPublicToken(publicToken) {
+  return prisma.jobPosting.findUnique({ 
+    where: { publicToken },
+    include: {
+      department: true,
+      skills: { include: { skill: true } },
+    }
+  });
+}
+
+export async function generatePublicTokenForJob(jobId) {
+  const token = generatePublicToken();
+  return prisma.jobPosting.update({
+    where: { id: jobId },
+    data: { publicToken: token },
+    include: {
+      department: true,
+      skills: { include: { skill: true } },
+    }
+  });
 }
 
 export function updateJobPostingById(id, data) {

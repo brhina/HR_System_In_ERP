@@ -84,6 +84,32 @@ export const adminApi = {
     const response = await axiosClient.post('/auth/clean-expired-tokens');
     return response.data;
   },
+
+  // Skills Management
+  async getAllSkills(params = {}) {
+    const response = await axiosClient.get('/hr/employees/skills', { params });
+    return response.data;
+  },
+
+  async getSkillById(skillId) {
+    const response = await axiosClient.get(`/hr/employees/skills/${skillId}`);
+    return response.data;
+  },
+
+  async createSkill(skillData) {
+    const response = await axiosClient.post('/hr/employees/skills', skillData);
+    return response.data;
+  },
+
+  async updateSkill(skillId, skillData) {
+    const response = await axiosClient.put(`/hr/employees/skills/${skillId}`, skillData);
+    return response.data;
+  },
+
+  async deleteSkill(skillId) {
+    const response = await axiosClient.delete(`/hr/employees/skills/${skillId}`);
+    return response.data;
+  },
 };
 
 export default adminApi;

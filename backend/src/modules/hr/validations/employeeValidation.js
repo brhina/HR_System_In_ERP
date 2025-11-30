@@ -180,4 +180,36 @@ export const offboardSchema = Joi.object({
   body: Joi.object({ reason: Joi.string().allow("").optional(), approvedById: Joi.string().uuid().optional() }).required(),
 });
 
+// Admin Skills Management Schemas
+export const createSkillCatalogSchema = Joi.object({
+  body: Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    description: Joi.string().allow("").optional(),
+    category: Joi.string().max(50).allow("").optional(),
+    subcategory: Joi.string().max(50).allow("").optional(),
+    isRequired: Joi.boolean().optional(),
+  }).required(),
+});
+
+export const updateSkillCatalogSchema = Joi.object({
+  params: Joi.object({ id: Joi.string().uuid().required() }).required(),
+  body: Joi.object({
+    name: Joi.string().min(2).max(100).optional(),
+    description: Joi.string().allow("").optional(),
+    category: Joi.string().max(50).allow("").optional(),
+    subcategory: Joi.string().max(50).allow("").optional(),
+    isRequired: Joi.boolean().optional(),
+  })
+    .min(1)
+    .required(),
+});
+
+export const deleteSkillCatalogSchema = Joi.object({
+  params: Joi.object({ id: Joi.string().uuid().required() }).required(),
+});
+
+export const getSkillCatalogSchema = Joi.object({
+  params: Joi.object({ id: Joi.string().uuid().required() }).required(),
+});
+
 

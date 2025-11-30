@@ -28,9 +28,25 @@ export const employeeApi = {
     return apiClient.get('/hr/employees/departments');
   },
 
+  createDepartment: (data) => {
+    return apiClient.post('/hr/employees/departments', data);
+  },
+
+  updateDepartment: (id, data) => {
+    return apiClient.put(`/hr/employees/departments/${id}`, data);
+  },
+
+  deleteDepartment: (id) => {
+    return apiClient.delete(`/hr/employees/departments/${id}`);
+  },
+
   // Manager Operations
   listManagers: () => {
     return apiClient.get('/hr/employees/managers');
+  },
+
+  assignManager: (employeeId, managerId) => {
+    return apiClient.post(`/hr/employees/${employeeId}/assign-manager`, { managerId });
   },
 
   // Skills Operations

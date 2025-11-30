@@ -16,8 +16,36 @@ const FormField = ({
   register,
   error,
   className,
+  children,
   ...props
 }) => {
+  // If children are provided, render them (for controlled inputs)
+  if (children) {
+    return (
+      <div className={cn('space-y-1', className)}>
+        <label className="block text-sm font-medium text-gray-700">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        
+        <div className="relative">
+          {Icon && (
+            <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+          )}
+          {children}
+        </div>
+        
+        {error && (
+          <p className="text-sm text-red-600 flex items-center">
+            <span className="mr-1">⚠</span>
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Otherwise, render Input with register (for react-hook-form)
   return (
     <div className={cn('space-y-1', className)}>
       <label className="block text-sm font-medium text-gray-700">
@@ -37,7 +65,7 @@ const FormField = ({
             Icon && 'pl-10',
             error && 'border-red-500 focus:border-red-500 focus:ring-red-500'
           )}
-          {...register(name)}
+          {...(register ? register(name) : {})}
           {...props}
         />
       </div>

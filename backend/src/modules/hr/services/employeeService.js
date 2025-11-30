@@ -91,6 +91,113 @@ export async function listDepartments() {
   return repo.findAllDepartments();
 }
 
+export async function createDepartment(data) {
+  // Validate required fields
+  if (!data.name || data.name.trim() === '') {
+    const error = new Error('Department name is required');
+    error.statusCode = 400;
+    error.code = 'MISSING_REQUIRED_FIELDS';
+    throw error;
+  }
+
+  // Check if department with same name already exists
+  const existing = await repo.findDepartmentByName(data.name.trim());
+  if (existing) {
+    const error = new Error(`Department with name "${data.name}" already exists`);
+    error.statusCode = 400;
+    error.code = 'DEPARTMENT_ALREADY_EXISTS';
+    throw error;
+  }
+
+  return repo.createDepartment({ name: data.name.trim() });
+}
+
+export async function updateDepartment(id, data) {
+  // Validate department exists
+  const department = await repo.findDepartmentById(id);
+  if (!department) {
+    const error = new Error(`Department with ID ${id} not found`);
+    error.statusCode = 404;
+    error.code = 'DEPARTMENT_NOT_FOUND';
+    throw error;
+  }
+
+  // Validate required fields
+  if (data.name && data.name.trim() === '') {
+    const error = new Error('Department name cannot be empty');
+    error.statusCode = 400;
+    error.code = 'INVALID_INPUT';
+    throw error;
+  }
+
+  // Check if another department with same name exists
+  if (data.name) {
+    const existing = await repo.findDepartmentByName(data.name.trim());
+    if (existing && existing.id !== id) {
+      const error = new Error(`Department with name "${data.name}" already exists`);
+      error.statusCode = 400;
+      error.code = 'DEPARTMENT_ALREADY_EXISTS';
+      throw error;
+    }
+  }
+
+  return repo.updateDepartment(id, { name: data.name.trim() });
+}
+
+export async function deleteDepartment(id) {
+  // Validate department exists
+  const department = await repo.findDepartmentById(id);
+  if (!department) {
+    const error = new Error(`Department with ID ${id} not found`);
+    error.statusCode = 404;
+    error.code = 'DEPARTMENT_NOT_FOUND';
+    throw error;
+  }
+
+  // Check if department has employees
+  const employees = await repo.findEmployeesByDepartment(id);
+  if (employees.length > 0) {
+    const error = new Error(`Cannot delete department. It has ${employees.length} employee(s) assigned. Please reassign or remove employees first.`);
+    error.statusCode = 400;
+    error.code = 'DEPARTMENT_HAS_EMPLOYEES';
+    throw error;
+  }
+
+  return repo.deleteDepartment(id);
+}
+
+export async function assignManager(employeeId, managerId) {
+  // Validate employee exists
+  const employee = await repo.findById(employeeId);
+  if (!employee) {
+    const error = new Error(`Employee with ID ${employeeId} not found`);
+    error.statusCode = 404;
+    error.code = 'EMPLOYEE_NOT_FOUND';
+    throw error;
+  }
+
+  // Validate manager exists if provided
+  if (managerId) {
+    const manager = await repo.findById(managerId);
+    if (!manager) {
+      const error = new Error(`Manager with ID ${managerId} not found`);
+      error.statusCode = 404;
+      error.code = 'MANAGER_NOT_FOUND';
+      throw error;
+    }
+
+    // Prevent self-assignment
+    if (employeeId === managerId) {
+      const error = new Error('Employee cannot be their own manager');
+      error.statusCode = 400;
+      error.code = 'INVALID_MANAGER_ASSIGNMENT';
+      throw error;
+    }
+  }
+
+  return repo.updateById(employeeId, { managerId: managerId || null });
+}
+
 export async function listEmployeesForManagerSelection() {
   return repo.findManyForManagerSelection();
 }
@@ -205,6 +312,89 @@ export function getSkillAnalytics() {
 
 export function getSkillRecommendations(employeeId) {
   return repo.getSkillRecommendations(employeeId);
+}
+
+// Admin Skills Management Services
+export function getSkillById(id) {
+  return repo.findSkillByIdWithDetails(id);
+}
+
+export function listSkillsWithFilters(filters) {
+  return repo.listSkillsWithFilters(filters);
+}
+
+export async function createSkillWithGuards(data) {
+  // Validate name is provided
+  if (!data.name || !data.name.trim()) {
+    const error = new Error('Skill name is required');
+    error.statusCode = 400;
+    error.code = 'SKILL_NAME_REQUIRED';
+    throw error;
+  }
+  
+  // Normalize empty strings to null for optional fields
+  const normalizedData = {
+    name: data.name.trim(),
+    description: data.description?.trim() || null,
+    category: data.category?.trim() || null,
+    subcategory: data.subcategory?.trim() || null,
+    isRequired: data.isRequired || false,
+  };
+  
+  // Check if skill with same name already exists
+  const existing = await repo.findSkillByName(normalizedData.name);
+  if (existing) {
+    const error = new Error(`Skill with name "${normalizedData.name}" already exists`);
+    error.statusCode = 409;
+    error.code = 'SKILL_DUPLICATE';
+    throw error;
+  }
+  return repo.createSkill(normalizedData);
+}
+
+export async function updateSkillWithGuards(id, data) {
+  // Check if skill exists
+  const existing = await repo.findSkillById(id);
+  if (!existing) {
+    const error = new Error(`Skill with ID ${id} not found`);
+    error.statusCode = 404;
+    error.code = 'SKILL_NOT_FOUND';
+    throw error;
+  }
+  
+  // Normalize empty strings to null for optional fields
+  const normalizedData = {};
+  if (data.name !== undefined) normalizedData.name = data.name?.trim();
+  if (data.description !== undefined) normalizedData.description = data.description?.trim() || null;
+  if (data.category !== undefined) normalizedData.category = data.category?.trim() || null;
+  if (data.subcategory !== undefined) normalizedData.subcategory = data.subcategory?.trim() || null;
+  if (data.isRequired !== undefined) normalizedData.isRequired = data.isRequired;
+  
+  // If name is being changed, check for duplicates
+  if (normalizedData.name && normalizedData.name !== existing.name) {
+    const duplicate = await repo.findSkillByName(normalizedData.name);
+    if (duplicate) {
+      const error = new Error(`Skill with name "${normalizedData.name}" already exists`);
+      error.statusCode = 409;
+      error.code = 'SKILL_DUPLICATE';
+      throw error;
+    }
+  }
+  
+  return repo.updateSkill(id, normalizedData);
+}
+
+export async function deleteSkillWithGuards(id) {
+  // Check if skill exists
+  const existing = await repo.findSkillById(id);
+  if (!existing) {
+    const error = new Error(`Skill with ID ${id} not found`);
+    error.statusCode = 404;
+    error.code = 'SKILL_NOT_FOUND';
+    throw error;
+  }
+  
+  return repo.deleteSkill(id);
 }
 
 // Certifications

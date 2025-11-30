@@ -1,5 +1,7 @@
 import * as service from "../services/employeeService.js";
 import { response } from "../../../utils/response.js";
+import * as v from "../validations/employeeValidation.js";
+import { validate } from "../../../middlewares/validationMiddleware.js";
 
 export async function listEmployees(req, res, next) {
   try {
@@ -33,6 +35,42 @@ export async function listDepartments(req, res, next) {
   try {
     const departments = await service.listDepartments();
     res.json(response.success(departments));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createDepartment(req, res, next) {
+  try {
+    const department = await service.createDepartment(req.body);
+    res.status(201).json(response.success(department));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateDepartment(req, res, next) {
+  try {
+    const department = await service.updateDepartment(req.params.id, req.body);
+    res.json(response.success(department));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteDepartment(req, res, next) {
+  try {
+    await service.deleteDepartment(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function assignManager(req, res, next) {
+  try {
+    const employee = await service.assignManager(req.params.id, req.body.managerId);
+    res.json(response.success(employee));
   } catch (err) {
     next(err);
   }
@@ -331,6 +369,57 @@ export async function offboardEmployee(req, res, next) {
   try {
     const updated = await service.offboardEmployee(req.params.id, req.body);
     res.json(response.success(updated));
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Admin Skills Management Controllers
+export async function getSkillById(req, res, next) {
+  try {
+    await validate(v.getSkillCatalogSchema, { params: req.params });
+    const skill = await service.getSkillById(req.params.id);
+    if (!skill) return res.status(404).json(response.error("Skill not found", 404));
+    res.json(response.success(skill));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listSkills(req, res, next) {
+  try {
+    const skills = await service.listSkillsWithFilters(req.query);
+    res.json(response.success(skills));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createSkill(req, res, next) {
+  try {
+    await validate(v.createSkillCatalogSchema, { body: req.body });
+    const skill = await service.createSkillWithGuards(req.body);
+    res.status(201).json(response.success(skill));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSkill(req, res, next) {
+  try {
+    await validate(v.updateSkillCatalogSchema, { params: req.params, body: req.body });
+    const skill = await service.updateSkillWithGuards(req.params.id, req.body);
+    res.json(response.success(skill));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteSkill(req, res, next) {
+  try {
+    await validate(v.deleteSkillCatalogSchema, { params: req.params });
+    await service.deleteSkillWithGuards(req.params.id);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }
