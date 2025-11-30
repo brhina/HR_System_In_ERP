@@ -1,8 +1,16 @@
 import * as repo from "../repositories/employeeRepository.js";
 
 export async function listEmployees({ query }) {
-  const { q, departmentId, status, take, skip } = query || {};
-  return repo.findMany({ q, departmentId, status, take: Number(take) || 20, skip: Number(skip) || 0 });
+  const { q, departmentId, status, take, skip, fromCandidate } = query || {};
+  const fromCandidateBool = fromCandidate === 'true' || fromCandidate === true;
+  return repo.findMany({ 
+    q, 
+    departmentId, 
+    status, 
+    take: Number(take) || 20, 
+    skip: Number(skip) || 0,
+    fromCandidate: fromCandidate ? fromCandidateBool : undefined
+  });
 }
 
 export async function createEmployee(payload) {

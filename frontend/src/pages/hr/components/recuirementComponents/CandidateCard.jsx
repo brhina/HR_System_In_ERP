@@ -111,22 +111,38 @@ const CandidateCard = ({
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         {/* Stage Progression Buttons */}
         <div className="flex items-center space-x-2">
-          {nextStages.map(stage => (
-            <Button
-              key={stage}
-              variant="outline"
-              size="sm"
-              onClick={() => onUpdateStage({ candidateId: candidate.id, stage })}
-              disabled={isLoading}
-              className={cn(
-                'text-xs',
-                stage === 'REJECTED' && 'text-red-600 hover:text-red-700 hover:bg-red-50',
-                stage === 'HIRED' && 'text-green-600 hover:text-green-700 hover:bg-green-50'
-              )}
-            >
-              {recruitmentUtils.getStageLabel(stage)}
-            </Button>
-          ))}
+          {nextStages.map(stage => {
+            // HIRED stage should use the hire flow, not stage update
+            if (stage === 'HIRED') {
+              return (
+                <Button
+                  key={stage}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onHire(candidate.id)}
+                  disabled={isLoading}
+                  className="text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+                >
+                  {recruitmentUtils.getStageLabel(stage)}
+                </Button>
+              );
+            }
+            return (
+              <Button
+                key={stage}
+                variant="outline"
+                size="sm"
+                onClick={() => onUpdateStage({ candidateId: candidate.id, stage })}
+                disabled={isLoading}
+                className={cn(
+                  'text-xs',
+                  stage === 'REJECTED' && 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                )}
+              >
+                {recruitmentUtils.getStageLabel(stage)}
+              </Button>
+            );
+          })}
         </div>
         
         {/* Action Buttons */}

@@ -4,11 +4,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { XCircle } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { useRecruitmentDetail } from './hooks/useRecruitment';
 import { 
   JobPostingHeader,
   CandidatesSection,
   CandidateForm,
+  CandidateDetailView,
   ScoreModal,
   InterviewScheduler,
   HireModal,
@@ -30,10 +32,12 @@ const RecruitmentDetail = () => {
   const [showInterviewScheduler, setShowInterviewScheduler] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCandidateDetail, setShowCandidateDetail] = useState(false);
   
   // Selected items
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [editingCandidate, setEditingCandidate] = useState(null);
+  const [viewingCandidate, setViewingCandidate] = useState(null);
   
   // Fetch recruitment data
   const {
@@ -130,6 +134,12 @@ const RecruitmentDetail = () => {
     const candidate = candidates.find(c => c.id === candidateId);
     setEditingCandidate(candidate);
     setShowCandidateForm(true);
+  };
+
+  const handleViewCandidate = (candidateId) => {
+    const candidate = candidates.find(c => c.id === candidateId);
+    setViewingCandidate(candidate);
+    setShowCandidateDetail(true);
   };
   
   const handleDeleteCandidate = async (candidateId) => {
@@ -240,6 +250,7 @@ const RecruitmentDetail = () => {
         onScheduleInterview={handleScheduleInterview}
         onHire={handleHire}
         onEditCandidate={handleEditCandidate}
+        onViewCandidate={handleViewCandidate}
         onDeleteCandidate={handleDeleteCandidate}
         isLoading={isLoading}
       />
@@ -299,6 +310,33 @@ const RecruitmentDetail = () => {
         jobPosting={jobPosting}
         onLinkGenerated={handleLinkGenerated}
       />
+
+      {/* Candidate Detail Modal */}
+      <Modal
+        isOpen={showCandidateDetail}
+        onClose={() => {
+          setShowCandidateDetail(false);
+          setViewingCandidate(null);
+        }}
+        size="xl"
+      >
+        {viewingCandidate && (
+          <CandidateDetailView
+            candidate={viewingCandidate}
+            onEdit={(candidateId) => {
+              setShowCandidateDetail(false);
+              setViewingCandidate(null);
+              handleEditCandidate(candidateId);
+            }}
+            onClose={() => {
+              setShowCandidateDetail(false);
+              setViewingCandidate(null);
+            }}
+            isLoading={isLoading}
+            asModal={true}
+          />
+        )}
+      </Modal>
     </motion.div>
   );
 };

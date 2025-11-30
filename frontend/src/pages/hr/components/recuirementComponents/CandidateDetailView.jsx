@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -6,22 +6,23 @@ import {
   Phone, 
   Calendar, 
   Star, 
-  FileText, 
-  Download, 
-  Eye, 
   Edit3,
   ArrowLeft,
   MapPin,
-  Building,
-  Clock
+  Building
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { Button } from '../../../../components/ui/Button';
-import { Modal } from '../../../../components/ui/Modal';
 import { cn } from '../../../../lib/utils';
 import CandidateDocumentsSection from './CandidateDocumentsSection';
-import useRecruitmentStore from '../../../../stores/useRecruitmentStore';
 import { recruitmentUtils } from '../../../../api/recruitmentApi';
+import { 
+  useCandidateDocuments, 
+  useUploadCandidateDocument, 
+  useAddCandidateDocument, 
+  useRemoveCandidateDocument 
+} from '../../hooks/useRecruitment';
 
 /**
  * Candidate Detail View Component
@@ -31,56 +32,39 @@ const CandidateDetailView = ({
   candidate, 
   onEdit, 
   onClose,
-  isLoading = false 
+  isLoading = false,
+  asModal = false
 }) => {
-  const [documents, setDocuments] = useState([]);
-  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  // Fetch documents using React Query
+  const { data: documents = [], isLoading: isLoadingDocuments, refetch: refetchDocuments } = useCandidateDocuments(candidate?.id);
   
-  const {
-    fetchCandidateDocuments,
-    uploadCandidateDocument,
-    addCandidateDocument,
-    removeCandidateDocument
-  } = useRecruitmentStore();
-
-  useEffect(() => {
-    if (candidate?.id) {
-      loadDocuments();
-    }
-  }, [candidate?.id]);
-
-  const loadDocuments = async () => {
-    setIsLoadingDocuments(true);
-    try {
-      console.log('Loading documents for candidate:', candidate.id);
-      const result = await fetchCandidateDocuments(candidate.id);
-      console.log('Documents result:', result);
-      if (result.success) {
-        setDocuments(result.data);
-        console.log('Documents set:', result.data);
-      } else {
-        console.error('Failed to load documents:', result.error);
-      }
-    } catch (error) {
-      console.error('Failed to load documents:', error);
-    } finally {
-      setIsLoadingDocuments(false);
-    }
-  };
+  // Document mutations
+  const uploadDocumentMutation = useUploadCandidateDocument();
+  const addDocumentMutation = useAddCandidateDocument();
+  const removeDocumentMutation = useRemoveCandidateDocument();
 
   const handleFileUpload = async (files) => {
     try {
       for (const file of files) {
-        const uploadResult = await uploadCandidateDocument(candidate.id, file);
-        if (uploadResult.success) {
-          await addCandidateDocument(candidate.id, {
-            name: file.name,
-            fileUrl: uploadResult.data.fileUrl,
-            documentType: getDocumentType(file.name)
+        // Upload file first
+        const uploadResult = await uploadDocumentMutation.mutateAsync({ 
+          candidateId: candidate.id, 
+          file 
+        });
+        
+        // Then add document record
+        if (uploadResult.data?.fileUrl) {
+          await addDocumentMutation.mutateAsync({
+            candidateId: candidate.id,
+            data: {
+              name: file.name,
+              fileUrl: uploadResult.data.fileUrl,
+              documentType: getDocumentType(file.name)
+            }
           });
-          await loadDocuments(); // Refresh documents
         }
       }
+      refetchDocuments();
     } catch (error) {
       console.error('Error uploading documents:', error);
     }
@@ -88,8 +72,11 @@ const CandidateDetailView = ({
 
   const handleRemoveFile = async (file) => {
     try {
-      await removeCandidateDocument(candidate.id, file.id);
-      await loadDocuments(); // Refresh documents
+      await removeDocumentMutation.mutateAsync({
+        candidateId: candidate.id,
+        documentId: file.id
+      });
+      refetchDocuments();
     } catch (error) {
       console.error('Error removing document:', error);
     }
@@ -121,23 +108,21 @@ const CandidateDetailView = ({
 
   const stageInfo = recruitmentUtils.INTERVIEW_STAGES[candidate.stage];
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-    >
+  const content = (
+    <>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="p-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {asModal && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="p-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div className="h-12 w-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
             <User className="h-6 w-6 text-blue-700" />
           </div>
@@ -275,6 +260,24 @@ const CandidateDetailView = ({
           />
         </div>
       </div>
+    </>
+  );
+
+  if (asModal) {
+    return (
+      <div className="p-6">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+    >
+      {content}
     </motion.div>
   );
 };

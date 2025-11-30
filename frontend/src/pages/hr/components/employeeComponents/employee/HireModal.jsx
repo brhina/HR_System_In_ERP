@@ -16,6 +16,9 @@ import { Modal } from '../../../../../components/ui/Modal';
 import { Input } from '../../../../../components/ui/Input';
 import { recruitmentUtils } from '../../../../../api/recruitmentApi';
 import { cn } from '../../../../../lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import employeeApi from '../../../../../api/employeeApi';
+import ManagerSelector from '../ManagerSelector';
 
 /**
  * Hire Modal Component-
@@ -26,10 +29,23 @@ const HireModal = ({
   onClose, 
   onSubmit, 
   candidate,
+  jobPosting,
   departments = [],
-  managers = [],
+  managers: propManagers = [],
   isLoading = false 
 }) => {
+  // Fetch managers if not provided
+  const { data: fetchedManagers = [] } = useQuery({
+    queryKey: ['managers'],
+    queryFn: async () => {
+      const response = await employeeApi.listManagers();
+      return response.data.data || [];
+    },
+    enabled: isOpen && propManagers.length === 0,
+  });
+
+  const managers = propManagers.length > 0 ? propManagers : fetchedManagers;
+
   const [formData, setFormData] = useState({
     candidateId: '',
     jobType: 'FULL_TIME',
@@ -52,9 +68,10 @@ const HireModal = ({
         ...prev,
         candidateId: candidate.id,
         startDate: new Date().toISOString().split('T')[0],
+        departmentId: jobPosting?.departmentId || prev.departmentId,
       }));
     }
-  }, [candidate]);
+  }, [candidate, jobPosting]);
   
   useEffect(() => {
     if (isOpen) {
@@ -74,9 +91,7 @@ const HireModal = ({
     if (!formData.startDate) {
       newErrors.startDate = 'Start date is required';
     }
-    if (!formData.managerId) {
-      newErrors.managerId = 'Manager is required';
-    }
+    // Manager is optional, so no validation needed
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -182,30 +197,16 @@ const HireModal = ({
               </select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Manager *
-              </label>
-              <select
-                value={formData.managerId}
-                onChange={(e) => handleChange('managerId', e.target.value)}
-                className={cn(
-                  'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                  errors.managerId && 'border-red-500'
-                )}
-                disabled={isSubmitting}
-              >
-                <option value="">Select manager</option>
-                {managers.map(manager => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.firstName} {manager.lastName} - {manager.jobTitle}
-                  </option>
-                ))}
-              </select>
-              {errors.managerId && (
-                <p className="text-sm text-red-600 mt-1">{errors.managerId}</p>
-              )}
-            </div>
+            <ManagerSelector
+              value={formData.managerId}
+              onChange={(managerId) => handleChange('managerId', managerId || '')}
+              managers={managers}
+              label="Manager"
+              required={false}
+              error={errors.managerId}
+              disabled={isSubmitting}
+              showEmptyOption={true}
+            />
           </div>
         </div>
         

@@ -1,7 +1,7 @@
 import { prisma } from "../../../config/db.js";
 import { dateRange } from "../../../utils/dateUtils.js";
 
-export async function findMany({ q, departmentId, status, take, skip }) {
+export async function findMany({ q, departmentId, status, take, skip, fromCandidate }) {
   const where = {
     AND: [
       q
@@ -15,9 +15,30 @@ export async function findMany({ q, departmentId, status, take, skip }) {
         : {},
       departmentId ? { departmentId } : {},
       status ? { status } : {},
+      fromCandidate !== undefined ? (fromCandidate ? { candidateId: { not: null } } : { candidateId: null }) : {},
     ],
   };
-  return prisma.employee.findMany({ where, take, skip, orderBy: { createdAt: "desc" } });
+  return prisma.employee.findMany({ 
+    where, 
+    take, 
+    skip, 
+    orderBy: { createdAt: "desc" },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          stage: true,
+          score: true,
+          jobPosting: {
+            select: {
+              id: true,
+              title: true,
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 export function findById(id) {
@@ -81,7 +102,23 @@ export function findSkillAssignment(employeeId, skillId) {
 
 export function findManyForManagerSelection() {
   return prisma.employee.findMany({ 
-    select: { id: true, firstName: true, lastName: true, email: true, jobTitle: true },
+    where: {
+      status: 'ACTIVE' // Only show active employees as potential managers
+    },
+    select: { 
+      id: true, 
+      firstName: true, 
+      lastName: true, 
+      email: true, 
+      phone: true,
+      jobTitle: true,
+      department: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
     orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
   });
 }

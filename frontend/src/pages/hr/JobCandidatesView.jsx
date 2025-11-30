@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -6,26 +6,18 @@ import {
   Plus,
   Users,
   Calendar,
-  Star,
-  Filter,
-  Search,
-  Eye,
-  Edit,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Clock
+  XCircle
 } from 'lucide-react';
 
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
-import { useJobPosting, useCandidatesForJob, useCreateCandidate, useUpdateCandidateStage, useSetCandidateScore, useHireCandidate, useScheduleInterview, useInterviewers, useDeleteCandidate } from './hooks/useRecruitment';
+import { useJobPosting } from './hooks/useRecruitment';
+import { useCandidateManagement } from './hooks/useCandidateManagement';
 import { recruitmentUtils } from '../../api/recruitmentApi';
-import { cn } from '../../lib/utils';
 import CandidateCard from './components/recuirementComponents/CandidateCard';
 import CandidateForm from './components/recuirementComponents/CandidateForm';
 import CandidateDetailView from './components/recuirementComponents/CandidateDetailView';
+import CandidateFilters from './components/recuirementComponents/CandidateFilters';
 import ScoreModal from './components/employeeComponents/employee/ScoreModal';
 import HireModal from './components/employeeComponents/employee/HireModal';
 import InterviewScheduler from './components/recuirementComponents/InterviewScheduler';
@@ -38,51 +30,57 @@ const JobCandidatesView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // State management
-  const [searchTerm, setSearchTerm] = useState('');
-  const [stageFilter, setStageFilter] = useState('all');
-  const [showCandidateForm, setShowCandidateForm] = useState(false);
-  const [showCandidateDetail, setShowCandidateDetail] = useState(false);
-  const [showScoreModal, setShowScoreModal] = useState(false);
-  const [showHireModal, setShowHireModal] = useState(false);
-  const [showInterviewModal, setShowInterviewModal] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [editingCandidate, setEditingCandidate] = useState(null);
-  const [viewingCandidate, setViewingCandidate] = useState(null);
-  
-  // Data fetching
+  // Fetch job posting
   const { data: jobPosting, isLoading: isLoadingJob, error: jobError } = useJobPosting(id);
-  const { data: candidates = [], isLoading: isLoadingCandidates, error: candidatesError, refetch: refetchCandidates } = useCandidatesForJob(id);
-  const { data: interviewers = [] } = useInterviewers();
   
-  // Mutations
-  const createCandidateMutation = useCreateCandidate();
-  const updateStageMutation = useUpdateCandidateStage();
-  const setScoreMutation = useSetCandidateScore();
-  const hireMutation = useHireCandidate();
-  const scheduleInterviewMutation = useScheduleInterview();
+  // Use candidate management hook
+  const candidateManagement = useCandidateManagement({ jobId: id });
   
-  // Computed values
-  const filteredCandidates = useMemo(() => {
-    let filtered = candidates;
-    
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(candidate =>
-        candidate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Filter by stage
-    if (stageFilter !== 'all') {
-      filtered = filtered.filter(candidate => candidate.stage === stageFilter);
-    }
-    
-    return filtered;
-  }, [candidates, searchTerm, stageFilter]);
+  const {
+    candidates: filteredCandidates,
+    allCandidates: candidates,
+    interviewers,
+    isLoading: isLoadingCandidates,
+    error: candidatesError,
+    searchTerm,
+    setSearchTerm,
+    stageFilter,
+    setStageFilter,
+    showCandidateForm,
+    setShowCandidateForm,
+    showCandidateDetail,
+    setShowCandidateDetail,
+    showScoreModal,
+    setShowScoreModal,
+    showHireModal,
+    setShowHireModal,
+    showInterviewModal,
+    setShowInterviewModal,
+    selectedCandidate,
+    setSelectedCandidate,
+    editingCandidate,
+    setEditingCandidate,
+    viewingCandidate,
+    setViewingCandidate,
+    handleCreateCandidate,
+    handleUpdateStage,
+    handleSetScore,
+    handleSaveScore,
+    handleHire,
+    handleHireSubmit,
+    handleScheduleInterview,
+    handleInterviewSubmit,
+    handleEditCandidate,
+    handleViewCandidate,
+    handleDeleteCandidate,
+    isCreatingCandidate,
+    isUpdatingStage,
+    isSettingScore,
+    isHiring,
+    isSchedulingInterview,
+  } = candidateManagement;
   
+  // Group candidates by stage for filter display
   const candidatesByStage = useMemo(() => {
     const groups = {};
     filteredCandidates.forEach(candidate => {
@@ -97,96 +95,6 @@ const JobCandidatesView = () => {
   const isLoading = isLoadingJob || isLoadingCandidates;
   const hasError = jobError || candidatesError;
   
-  // Event handlers
-  const handleCreateCandidate = async ({ jobId, data }) => {
-    try {
-      await createCandidateMutation.mutateAsync({ jobId, data });
-      setShowCandidateForm(false);
-      refetchCandidates();
-    } catch (error) {
-      console.error('Error creating candidate:', error);
-    }
-  };
-  
-  const handleUpdateStage = async ({ candidateId, stage }) => {
-    try {
-      await updateStageMutation.mutateAsync({ candidateId, stage });
-      refetchCandidates();
-    } catch (error) {
-      console.error('Error updating candidate stage:', error);
-    }
-  };
-  
-  const handleSetScore = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    setSelectedCandidate(candidate);
-    setShowScoreModal(true);
-  };
-  
-  const handleSaveScore = async ({ candidateId, score, feedback }) => {
-    try {
-      await setScoreMutation.mutateAsync({ candidateId, score, feedback });
-      setShowScoreModal(false);
-      setSelectedCandidate(null);
-      refetchCandidates();
-    } catch (error) {
-      console.error('Error saving score:', error);
-    }
-  };
-  
-  const handleHire = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    setSelectedCandidate(candidate);
-    setShowHireModal(true);
-  };
-  
-  const handleHireCandidate = async (hireData) => {
-    try {
-      await hireMutation.mutateAsync({ candidateId: selectedCandidate.id, data: hireData });
-      setShowHireModal(false);
-      setSelectedCandidate(null);
-      refetchCandidates();
-    } catch (error) {
-      console.error('Error hiring candidate:', error);
-    }
-  };
-  
-  const handleEditCandidate = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    setEditingCandidate(candidate);
-    setShowCandidateForm(true);
-  };
-
-  const handleViewCandidate = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    setViewingCandidate(candidate);
-    setShowCandidateDetail(true);
-  };
-  
-  const deleteCandidateMutation = useDeleteCandidate();
-
-  const handleDeleteCandidate = async (candidateId) => {
-    if (window.confirm('Are you sure you want to delete this candidate? This action cannot be undone.')) {
-      deleteCandidateMutation.mutate(candidateId);
-    }
-  };
-  
-  const handleScheduleInterview = (candidateId) => {
-    const candidate = candidates.find(c => c.id === candidateId);
-    setSelectedCandidate(candidate);
-    setShowInterviewModal(true);
-  };
-  
-  const handleScheduleInterviewSubmit = async (interviewData) => {
-    try {
-      await scheduleInterviewMutation.mutateAsync(interviewData);
-      setShowInterviewModal(false);
-      setSelectedCandidate(null);
-      refetchCandidates();
-    } catch (error) {
-      console.error('Error scheduling interview:', error);
-    }
-  };
   
   // Loading state
   if (isLoading) {
@@ -267,54 +175,14 @@ const JobCandidatesView = () => {
       </div>
       
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-soft border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search candidates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Stages</option>
-              {Object.entries(recruitmentUtils.INTERVIEW_STAGES).map(([stage, info]) => (
-                <option key={stage} value={stage}>
-                  {info.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        {/* Filter indicators */}
-        {(searchTerm || stageFilter !== 'all') && (
-          <div className="flex items-center space-x-2 mt-4 pt-4 border-t border-gray-100">
-            <span className="text-sm text-gray-500">Active filters:</span>
-            {searchTerm && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Search: "{searchTerm}"
-              </span>
-            )}
-            {stageFilter !== 'all' && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                Stage: {recruitmentUtils.getStageLabel(stageFilter)}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      <CandidateFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        stageFilter={stageFilter}
+        onStageFilterChange={setStageFilter}
+        enableJobFilter={false}
+        candidatesByStage={candidatesByStage}
+      />
       
       {/* Candidates Grid */}
       {filteredCandidates.length === 0 ? (
@@ -365,7 +233,7 @@ const JobCandidatesView = () => {
         onSubmit={handleCreateCandidate}
         jobId={id}
         candidate={editingCandidate}
-        isLoading={createCandidateMutation.isPending}
+        isLoading={isCreatingCandidate}
       />
       
       <ScoreModal
@@ -376,7 +244,7 @@ const JobCandidatesView = () => {
         }}
         onSubmit={handleSaveScore}
         candidate={selectedCandidate}
-        isLoading={setScoreMutation.isPending}
+        isLoading={isSettingScore}
       />
       
       <HireModal
@@ -385,10 +253,10 @@ const JobCandidatesView = () => {
           setShowHireModal(false);
           setSelectedCandidate(null);
         }}
-        onSubmit={handleHireCandidate}
+        onSubmit={handleHireSubmit}
         candidate={selectedCandidate}
         jobPosting={jobPosting}
-        isLoading={hireMutation.isPending}
+        isLoading={isHiring}
       />
       
       <InterviewScheduler
@@ -397,10 +265,10 @@ const JobCandidatesView = () => {
           setShowInterviewModal(false);
           setSelectedCandidate(null);
         }}
-        onSubmit={handleScheduleInterviewSubmit}
+        onSubmit={handleInterviewSubmit}
         candidate={selectedCandidate}
         interviewers={interviewers}
-        isLoading={scheduleInterviewMutation.isPending}
+        isLoading={isSchedulingInterview}
       />
 
       {/* Candidate Detail View */}

@@ -18,6 +18,7 @@ import {
 
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import toast from 'react-hot-toast';
 import { Modal } from '../../components/ui/Modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDeleteCandidate } from './hooks/useRecruitment';
@@ -139,8 +140,15 @@ const GlobalCandidatesManagement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.candidates.all });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.employees.list() });
+      toast.success('Candidate hired successfully and added to employee list');
       setShowHireModal(false);
       setSelectedCandidate(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to hire candidate');
     },
   });
 
@@ -212,9 +220,17 @@ const GlobalCandidatesManagement = () => {
     }
   };
 
-  const handleHire = async ({ candidateId, data }) => {
+  const handleHire = (candidateId) => {
+    const candidate = candidates.find(c => c.id === candidateId);
+    setSelectedCandidate(candidate);
+    setShowHireModal(true);
+  };
+
+  const handleHireSubmit = async (hireData) => {
     try {
-      await hireMutation.mutateAsync({ candidateId, data });
+      await hireMutation.mutateAsync({ candidateId: selectedCandidate.id, data: hireData });
+      setShowHireModal(false);
+      setSelectedCandidate(null);
     } catch (error) {
       console.error('Error hiring candidate:', error);
     }
@@ -437,8 +453,9 @@ const GlobalCandidatesManagement = () => {
           setShowHireModal(false);
           setSelectedCandidate(null);
         }}
-        onSubmit={handleHire}
+        onSubmit={handleHireSubmit}
         candidate={selectedCandidate}
+        jobPosting={selectedCandidate?.jobPosting}
         departments={[]} // TODO: Fetch departments
         managers={[]} // TODO: Fetch managers
         isLoading={hireMutation.isPending}

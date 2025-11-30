@@ -160,14 +160,21 @@ export const useUpdateCandidateStage = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ candidateId, stage }) => recruitmentApi.updateCandidateStage(candidateId, stage),
+    mutationFn: ({ candidateId, stage }) => {
+      // Prevent trying to set HIRED through stage update
+      if (stage === 'HIRED') {
+        throw new Error('Cannot mark candidate as HIRED through stage update. Please use the "Hire Candidate" button to create an employee record.');
+      }
+      return recruitmentApi.updateCandidateStage(candidateId, stage);
+    },
     onSuccess: (data, variables) => {
       // Invalidate all candidate queries since stage affects multiple views
       queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.candidates.all });
       toast.success(`Candidate moved to ${variables.stage} stage`);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update candidate stage');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update candidate stage';
+      toast.error(errorMessage);
     },
   });
 };
@@ -216,10 +223,26 @@ export const useHireCandidate = () => {
   return useMutation({
     mutationFn: ({ candidateId, data }) => recruitmentApi.hireCandidate(candidateId, data),
     onSuccess: (data, variables) => {
+      // Invalidate all recruitment-related queries
       queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.candidates.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.kpis });
+      queryClient.invalidateQueries({ queryKey: queryKeys.recruitment.jobPostings.all });
+      
+      // Invalidate all employee queries to ensure the new employee appears in the list
+      queryClient.invalidateQueries({ queryKey: ['employees'] }); // This will invalidate all employee queries
       queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.employees.list() });
+      
+      // Also invalidate any employee list queries with different parameters
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return Array.isArray(query.queryKey) && 
+                 query.queryKey.length >= 2 &&
+                 query.queryKey[0] === 'employees' && 
+                 query.queryKey[1] === 'list';
+        }
+      });
+      
       toast.success('Candidate hired successfully and added to employee list');
     },
     onError: (error) => {
@@ -294,6 +317,79 @@ export const useRecruitmentKpis = () => {
       return response.data.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+/**
+ * Hook for fetching candidate documents
+ */
+export const useCandidateDocuments = (candidateId) => {
+  return useQuery({
+    queryKey: ['candidateDocuments', candidateId],
+    queryFn: async () => {
+      const response = await recruitmentApi.getCandidateDocuments(candidateId);
+      return response.data.data || [];
+    },
+    enabled: !!candidateId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+/**
+ * Hook for uploading candidate document
+ */
+export const useUploadCandidateDocument = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ candidateId, file }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return recruitmentApi.uploadCandidateDocument(candidateId, formData);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['candidateDocuments', variables.candidateId] });
+      toast.success('Document uploaded successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to upload document');
+    },
+  });
+};
+
+/**
+ * Hook for adding candidate document
+ */
+export const useAddCandidateDocument = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ candidateId, data }) => recruitmentApi.addCandidateDocument(candidateId, data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['candidateDocuments', variables.candidateId] });
+      toast.success('Document added successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to add document');
+    },
+  });
+};
+
+/**
+ * Hook for removing candidate document
+ */
+export const useRemoveCandidateDocument = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ candidateId, documentId }) => recruitmentApi.removeCandidateDocument(candidateId, documentId),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['candidateDocuments', variables.candidateId] });
+      toast.success('Document removed successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to remove document');
+    },
   });
 };
 

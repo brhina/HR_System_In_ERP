@@ -464,7 +464,29 @@ export async function hireCandidate(candidateId, { jobType, salary, managerId, s
         managerId: managerId || null,
         salary: salary || null,
         hireDate: new Date(startDate),
+        candidateId: candidate.id, // Link employee to candidate
       },
+      include: {
+        candidate: {
+          select: {
+            id: true,
+            stage: true,
+            score: true,
+            jobPosting: {
+              select: {
+                id: true,
+                title: true,
+              }
+            }
+          }
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
     });
 
     await tx.candidate.update({ where: { id: candidate.id }, data: { stage: 'HIRED', feedback: 'Converted to employee' } });

@@ -5,10 +5,9 @@ import { User, Mail, Phone, FileText, Upload } from 'lucide-react';
 import { Button } from '../../../../components/ui/Button';
 import { Modal } from '../../../../components/ui/Modal';
 import { Input } from '../../../../components/ui/Input';
-import { recruitmentUtils } from '../../../../api/recruitmentApi';
+import { recruitmentUtils, recruitmentApi } from '../../../../api/recruitmentApi';
 import { cn } from '../../../../lib/utils';
 import CandidateDocumentsSection from './CandidateDocumentsSection';
-import useRecruitmentStore from '../../../../stores/useRecruitmentStore';
 
 /**
  * Candidate Form Component
@@ -38,12 +37,6 @@ const CandidateForm = ({
   
   const isEdit = !!candidate;
   
-  const {
-    fetchCandidateDocuments,
-    uploadCandidateDocument,
-    addCandidateDocument,
-    removeCandidateDocument
-  } = useRecruitmentStore();
   
   useEffect(() => {
     if (isOpen) {
@@ -78,10 +71,9 @@ const CandidateForm = ({
   // Load existing documents for editing
   const loadExistingDocuments = async (candidateId) => {
     try {
-      const result = await fetchCandidateDocuments(candidateId);
-      if (result.success) {
-        setExistingFiles(result.data);
-      }
+      const response = await recruitmentApi.getCandidateDocuments(candidateId);
+      const documents = response.data?.data || response.data || [];
+      setExistingFiles(documents);
     } catch (error) {
       console.error('Failed to load documents:', error);
     }
@@ -98,35 +90,57 @@ const CandidateForm = ({
     
     setIsSubmitting(true);
     try {
-      // Submit candidate data first
-      const result = await onSubmit({ jobId, data: formData });
+      // Clean form data - convert empty strings to null for optional fields
+      const cleanedData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || null,
+        resumeUrl: formData.resumeUrl.trim() || null,
+      };
       
-      // Check if the result indicates an error
-      if (!result.success) {
-        // Handle specific error cases
-        if (result.code === 'CANDIDATE_DUPLICATE') {
-          setErrors({ 
-            email: 'A candidate with this email has already applied to this job posting. Please use a different email or check if you have already applied.' 
-          });
-        } else {
-          setErrors({ 
-            general: result.error || 'An unexpected error occurred. Please try again.' 
-          });
-        }
-        return;
+      // Submit candidate data first
+      const result = await onSubmit({ jobId, data: cleanedData });
+      
+      // React Query mutations return axios response.data
+      // Backend returns: { success: true, data: candidate }
+      // So result is: { success: true, data: { id, firstName, ... } }
+      let candidateId = null;
+      
+      if (result?.data?.id) {
+        // Standard API response: { success: true, data: { id, ... } }
+        candidateId = result.data.id;
+      } else if (result?.id) {
+        // Direct candidate object (shouldn't happen but handle it)
+        candidateId = result.id;
+      } else if (candidate?.id) {
+        // Editing existing candidate
+        candidateId = candidate.id;
       }
       
-      // Handle document operations if there are any
-      if (result && result.data && (uploadedFiles.length > 0 || removedFiles.length > 0)) {
-        await handleDocumentOperations(result.data.id || candidate?.id);
+      console.log('Candidate creation result:', result, 'Extracted ID:', candidateId);
+      
+      // Handle document operations if there are any files to upload/remove
+      if (candidateId && (uploadedFiles.length > 0 || removedFiles.length > 0)) {
+        await handleDocumentOperations(candidateId);
       }
       
       onClose();
     } catch (error) {
       console.error('Error submitting candidate:', error);
-      setErrors({ 
-        general: 'An unexpected error occurred. Please try again.' 
-      });
+      // Handle specific error cases
+      const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred. Please try again.';
+      const errorCode = error.response?.data?.code;
+      
+      if (errorCode === 'CANDIDATE_DUPLICATE' || errorMessage.includes('duplicate')) {
+        setErrors({ 
+          email: 'A candidate with this email has already applied to this job posting. Please use a different email or check if you have already applied.' 
+        });
+      } else {
+        setErrors({ 
+          general: errorMessage
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -136,21 +150,41 @@ const CandidateForm = ({
   const handleDocumentOperations = async (candidateId) => {
     try {
       // Upload new files
-      for (const file of uploadedFiles) {
-        const uploadResult = await uploadCandidateDocument(candidateId, file);
-        if (uploadResult.success) {
-          await addCandidateDocument(candidateId, {
-            name: file.name,
-            fileUrl: uploadResult.data.fileUrl,
-            documentType: getDocumentType(file.name)
-          });
+      for (const fileObj of uploadedFiles) {
+        const file = fileObj.file || fileObj; // Handle both file object and raw file
+        if (file instanceof File) {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          try {
+            // Upload the file
+            const uploadResponse = await recruitmentApi.uploadCandidateDocument(candidateId, formData);
+            const fileUrl = uploadResponse.data?.data?.fileUrl || uploadResponse.data?.fileUrl;
+            
+            if (fileUrl) {
+              // Add document record
+              await recruitmentApi.addCandidateDocument(candidateId, {
+                name: file.name,
+                fileUrl: fileUrl,
+                documentType: getDocumentType(file.name)
+              });
+            }
+          } catch (uploadError) {
+            console.error(`Error uploading file ${file.name}:`, uploadError);
+            // Continue with other files even if one fails
+          }
         }
       }
 
       // Remove deleted files
       for (const file of removedFiles) {
-        if (file.id) {
-          await removeCandidateDocument(candidateId, file.id);
+        if (file.id && !file.id.toString().startsWith('temp-')) {
+          try {
+            await recruitmentApi.removeCandidateDocument(candidateId, file.id);
+          } catch (removeError) {
+            console.error(`Error removing file ${file.name}:`, removeError);
+            // Continue with other files even if one fails
+          }
         }
       }
     } catch (error) {

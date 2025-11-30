@@ -19,6 +19,9 @@ export { default as EmptyState } from '../EmptyState';
 // Recruitment Detail Components
 export { default as CandidateCard } from './CandidateCard';
 export { default as CandidateForm } from './CandidateForm';
+export { default as CandidateDetailView } from './CandidateDetailView';
+export { default as CandidateDocumentsSection } from './CandidateDocumentsSection';
+export { default as CandidateFilters } from './CandidateFilters';
 export { default as ScoreModal } from '../employeeComponents/employee/ScoreModal';
 export { default as HireModal } from '../employeeComponents/employee/HireModal';
 export { default as JobPostingHeader } from './JobPostingHeader';

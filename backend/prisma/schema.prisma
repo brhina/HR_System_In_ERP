@@ -88,49 +88,51 @@ enum InterviewStatus {
 
 // Employee Management
 model Employee {
-  id              String             @id @default(uuid())
-  firstName       String
-  lastName        String
-  email           String             @unique
-  phone           String?
-  gender          Gender?
-  dob             DateTime?
-  hireDate        DateTime           @default(now())
-  status          EmploymentStatus   @default(ACTIVE)
-  jobType         JobType
-  jobTitle        String
-  salary          Float?             // Current salary
-  payFrequency    String?            // Monthly, Weekly, Bi-weekly, etc.
-  benefitsPackage String?            // Benefits package description
-  address         String?            // Street address
-  city            String?            // City
-  state           String?            // State/Province
-  postalCode      String?            // Postal/ZIP code
-  country         String?            // Country
-  emergencyContact Json?             // Emergency contact information
-  notes           String?            // Additional notes
-  department      Department         @relation(fields: [departmentId], references: [id])
-  departmentId    String
-  manager         Employee?          @relation("EmployeeManager", fields: [managerId], references: [id])
-  managerId       String?
-  subordinates    Employee[]         @relation("EmployeeManager")
-  skills          SkillAssignment[]
-  certifications  Certification[]
-  assessedSkills  SkillAssignment[] @relation("SkillAssessor")
-  verifiedCertifications Certification[] @relation("CertificationVerifier")
-  contracts       Contract[]
-  attendances     Attendance[]
-  leaves          LeaveRequest[]
-  evaluations     Evaluation[]       // evaluations about this employee
-  givenEvaluations Evaluation[]      @relation("Evaluator")           // evaluations performed by this employee
-  documents       EmployeeDocument[]
-  interviewsTaken Interview[]        @relation("InterviewInterviewer") // interviews conducted by this employee
-  approvedLeaves  LeaveRequest[]     @relation("ApprovedBy")          // leave requests approved by this employee
-  careerProgressions CareerProgression[] // career progression history
-  approvedProgressions CareerProgression[] @relation("CareerProgressionApprover") // progressions approved by this employee
-  user            User?              // Link to authentication user
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                     String              @id @default(uuid())
+  firstName              String
+  lastName               String
+  email                  String              @unique
+  phone                  String?
+  gender                 Gender?
+  dob                    DateTime?
+  hireDate               DateTime            @default(now())
+  status                 EmploymentStatus    @default(ACTIVE)
+  jobType                JobType
+  jobTitle               String
+  salary                 Float? // Current salary
+  payFrequency           String? // Monthly, Weekly, Bi-weekly, etc.
+  benefitsPackage        String? // Benefits package description
+  address                String? // Street address
+  city                   String? // City
+  state                  String? // State/Province
+  postalCode             String? // Postal/ZIP code
+  country                String? // Country
+  emergencyContact       Json? // Emergency contact information
+  notes                  String? // Additional notes
+  department             Department          @relation(fields: [departmentId], references: [id])
+  departmentId           String
+  manager                Employee?           @relation("EmployeeManager", fields: [managerId], references: [id])
+  managerId              String?
+  subordinates           Employee[]          @relation("EmployeeManager")
+  skills                 SkillAssignment[]
+  certifications         Certification[]
+  assessedSkills         SkillAssignment[]   @relation("SkillAssessor")
+  verifiedCertifications Certification[]     @relation("CertificationVerifier")
+  contracts              Contract[]
+  attendances            Attendance[]
+  leaves                 LeaveRequest[]
+  evaluations            Evaluation[] // evaluations about this employee
+  givenEvaluations       Evaluation[]        @relation("Evaluator") // evaluations performed by this employee
+  documents              EmployeeDocument[]
+  interviewsTaken        Interview[]         @relation("InterviewInterviewer") // interviews conducted by this employee
+  approvedLeaves         LeaveRequest[]      @relation("ApprovedBy") // leave requests approved by this employee
+  careerProgressions     CareerProgression[] // career progression history
+  approvedProgressions   CareerProgression[] @relation("CareerProgressionApprover") // progressions approved by this employee
+  user                   User? // Link to authentication user
+  candidateId            String?             @unique // Link to candidate if hired from recruitment
+  candidate              Candidate?          @relation(fields: [candidateId], references: [id]) // Link to candidate record
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 }
 
 // Department
@@ -143,101 +145,101 @@ model Department {
 
 // Skills & Certifications
 model Skill {
-  id            String             @id @default(uuid())
-  name          String
-  description   String?
-  category      String?            // Technical, Soft Skills, Leadership, etc.
-  subcategory   String?            // Programming, Communication, etc.
-  isRequired    Boolean            @default(false) // Required skill for certain roles
-  skillLevels   SkillLevel[]       // Defined proficiency levels
-  employees     SkillAssignment[]
-  jobPostings   JobPostingSkill[]  // Skills required for job postings
+  id             String               @id @default(uuid())
+  name           String
+  description    String?
+  category       String? // Technical, Soft Skills, Leadership, etc.
+  subcategory    String? // Programming, Communication, etc.
+  isRequired     Boolean              @default(false) // Required skill for certain roles
+  skillLevels    SkillLevel[] // Defined proficiency levels
+  employees      SkillAssignment[]
+  jobPostings    JobPostingSkill[] // Skills required for job postings
   certifications CertificationSkill[] // Skills validated by certifications
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model SkillAssignment {
-  id            String   @id @default(uuid())
-  employee      Employee @relation(fields: [employeeId], references: [id])
-  employeeId    String
-  skill         Skill    @relation(fields: [skillId], references: [id])
-  skillId       String
-  level         Int      // 1-5 scale
-  evidence      String?  // Evidence of skill proficiency
-  notes         String?  // Additional notes about the skill
-  assessedBy    Employee? @relation("SkillAssessor", fields: [assessedById], references: [id])
-  assessedById  String?
-  assessedAt    DateTime?
-  isSelfAssessed Boolean @default(true)
-  lastUpdated   DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(uuid())
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  employeeId     String
+  skill          Skill     @relation(fields: [skillId], references: [id])
+  skillId        String
+  level          Int // 1-5 scale
+  evidence       String? // Evidence of skill proficiency
+  notes          String? // Additional notes about the skill
+  assessedBy     Employee? @relation("SkillAssessor", fields: [assessedById], references: [id])
+  assessedById   String?
+  assessedAt     DateTime?
+  isSelfAssessed Boolean   @default(true)
+  lastUpdated    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model SkillLevel {
-  id          String @id @default(uuid())
-  skill       Skill  @relation(fields: [skillId], references: [id])
-  skillId     String
-  level       Int    // 1-5 scale
-  title       String // Beginner, Intermediate, Advanced, Expert, Master
-  description String // What this level means
+  id           String   @id @default(uuid())
+  skill        Skill    @relation(fields: [skillId], references: [id])
+  skillId      String
+  level        Int // 1-5 scale
+  title        String // Beginner, Intermediate, Advanced, Expert, Master
+  description  String // What this level means
   requirements String // What's required to achieve this level
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Certification {
-  id              String   @id @default(uuid())
-  employee        Employee @relation(fields: [employeeId], references: [id])
+  id              String               @id @default(uuid())
+  employee        Employee             @relation(fields: [employeeId], references: [id])
   employeeId      String
   name            String
   issuer          String?
-  credentialId    String?  // Certification number/ID
+  credentialId    String? // Certification number/ID
   issuedAt        DateTime
   expiresAt       DateTime?
   verifiedAt      DateTime?
-  verifiedBy      Employee? @relation("CertificationVerifier", fields: [verifiedById], references: [id])
+  verifiedBy      Employee?            @relation("CertificationVerifier", fields: [verifiedById], references: [id])
   verifiedById    String?
-  status          String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED, PENDING_VERIFICATION
-  documentUrl     String?  // Link to certificate document
+  status          String               @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED, PENDING_VERIFICATION
+  documentUrl     String? // Link to certificate document
   skills          CertificationSkill[] // Skills this certification validates
-  renewalReminder Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  renewalReminder Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 }
 
 model CertificationSkill {
-  id             String       @id @default(uuid())
-  certification  Certification @relation(fields: [certificationId], references: [id])
+  id              String        @id @default(uuid())
+  certification   Certification @relation(fields: [certificationId], references: [id])
   certificationId String
-  skill          Skill        @relation(fields: [skillId], references: [id])
-  skillId        String
-  level          Int          // Skill level validated by this certification
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  skill           Skill         @relation(fields: [skillId], references: [id])
+  skillId         String
+  level           Int // Skill level validated by this certification
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model JobPostingSkill {
-  id          String     @id @default(uuid())
-  jobPosting  JobPosting @relation(fields: [jobPostingId], references: [id])
+  id           String     @id @default(uuid())
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id])
   jobPostingId String
-  skill       Skill      @relation(fields: [skillId], references: [id])
-  skillId     String
-  required    Boolean    @default(true) // Required vs nice-to-have
-  minLevel    Int        @default(1) // Minimum skill level required
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  skill        Skill      @relation(fields: [skillId], references: [id])
+  skillId      String
+  required     Boolean    @default(true) // Required vs nice-to-have
+  minLevel     Int        @default(1) // Minimum skill level required
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 // Contracts
 model Contract {
-  id         String   @id @default(uuid())
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  id         String    @id @default(uuid())
+  employee   Employee  @relation(fields: [employeeId], references: [id])
   employeeId String
   startDate  DateTime
   endDate    DateTime?
-  document   String?   // file path / URL
+  document   String? // file path / URL
 }
 
 // Employee Documents
@@ -267,77 +269,78 @@ model Evaluation {
 // Recruitment & Hiring
 // -----------------------------------------
 model JobPosting {
-  id           String       @id @default(uuid())
+  id           String            @id @default(uuid())
   title        String
   description  String
-  department   Department   @relation(fields: [departmentId], references: [id])
+  department   Department        @relation(fields: [departmentId], references: [id])
   departmentId String
-  isActive     Boolean      @default(true)
-  publicToken  String?      @unique // Unique token for public application link
+  isActive     Boolean           @default(true)
+  publicToken  String?           @unique // Unique token for public application link
   candidates   Candidate[]
   skills       JobPostingSkill[] // Skills required for this job
-  createdAt    DateTime     @default(now())
+  createdAt    DateTime          @default(now())
 }
 
 model Candidate {
-  id             String           @id @default(uuid())
-  firstName      String
-  lastName       String
-  email          String
-  phone          String?
-  resumeUrl      String?
-  stage          InterviewStage   @default(APPLIED)
-  score          Int?
-  feedback       String?
-  jobPosting     JobPosting       @relation(fields: [jobPostingId], references: [id])
-  jobPostingId   String
-  interviews     Interview[]
-  documents      CandidateDocument[]
-  createdAt      DateTime         @default(now())
+  id           String              @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String
+  phone        String?
+  resumeUrl    String?
+  stage        InterviewStage      @default(APPLIED)
+  score        Int?
+  feedback     String?
+  jobPosting   JobPosting          @relation(fields: [jobPostingId], references: [id])
+  jobPostingId String
+  interviews   Interview[]
+  documents    CandidateDocument[]
+  employee     Employee? // Link to employee if hired
+  createdAt    DateTime            @default(now())
 }
 
 model CandidateDocument {
-  id             String    @id @default(uuid())
-  candidate      Candidate @relation(fields: [candidateId], references: [id])
-  candidateId    String
-  name           String
-  fileUrl        String
-  documentType   String?   // RESUME, COVER_LETTER, PORTFOLIO, CERTIFICATE, OTHER
-  uploadedAt     DateTime  @default(now())
+  id           String    @id @default(uuid())
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+  candidateId  String
+  name         String
+  fileUrl      String
+  documentType String? // RESUME, COVER_LETTER, PORTFOLIO, CERTIFICATE, OTHER
+  uploadedAt   DateTime  @default(now())
 }
 
 model Interview {
-  id           String     @id @default(uuid())
-  candidate    Candidate  @relation(fields: [candidateId], references: [id])
-  candidateId  String
-  interviewer  Employee?  @relation("InterviewInterviewer", fields: [interviewerId], references: [id])
+  id            String          @id @default(uuid())
+  candidate     Candidate       @relation(fields: [candidateId], references: [id])
+  candidateId   String
+  interviewer   Employee?       @relation("InterviewInterviewer", fields: [interviewerId], references: [id])
   interviewerId String?
-  date         DateTime
-  duration     Int?       // Duration in minutes
-  type         InterviewType @default(IN_PERSON)
-  location     String?    // For in-person interviews
-  meetingLink  String?    // For video/phone interviews
-  notes        String?    // Additional notes
-  feedback     String?
-  rating       Int?
-  status       InterviewStatus @default(SCHEDULED)
+  date          DateTime
+  duration      Int? // Duration in minutes
+  type          InterviewType   @default(IN_PERSON)
+  location      String? // For in-person interviews
+  meetingLink   String? // For video/phone interviews
+  notes         String? // Additional notes
+  feedback      String?
+  rating        Int?
+  status        InterviewStatus @default(SCHEDULED)
 }
 
 // -----------------------------------------
 // Time & Attendance
 // -----------------------------------------
 model Attendance {
-  id          String           @id @default(uuid())
-  employee    Employee         @relation(fields: [employeeId], references: [id])
-  employeeId  String
-  date        DateTime
-  status      AttendanceStatus @default(PRESENT)
-  checkIn     DateTime?
-  checkOut    DateTime?
-  overtime    Float?           // hours
-  workHours   Float?           // calculated work hours
-  notes       String?          // additional notes
-  location    String?          // work location
+  id         String           @id @default(uuid())
+  employee   Employee         @relation(fields: [employeeId], references: [id])
+  employeeId String
+  date       DateTime
+  status     AttendanceStatus @default(PRESENT)
+  checkIn    DateTime?
+  checkOut   DateTime?
+  overtime   Float? // hours
+  workHours  Float? // calculated work hours
+  notes      String? // additional notes
+  location   String? // work location
 }
 
 model LeaveRequest {
@@ -355,10 +358,10 @@ model LeaveRequest {
 
 // Career Progression Tracking
 model CareerProgression {
-  id                   String   @id @default(uuid())
-  employee             Employee @relation(fields: [employeeId], references: [id])
+  id                   String    @id @default(uuid())
+  employee             Employee  @relation(fields: [employeeId], references: [id])
   employeeId           String
-  type                 String   // PROMOTION, TRANSFER, DEMOTION, LATERAL_MOVE
+  type                 String // PROMOTION, TRANSFER, DEMOTION, LATERAL_MOVE
   previousJobTitle     String?
   newJobTitle          String?
   previousSalary       Float?
@@ -367,14 +370,14 @@ model CareerProgression {
   newDepartmentId      String?
   previousManagerId    String?
   newManagerId         String?
-  effectiveDate        DateTime @default(now())
+  effectiveDate        DateTime  @default(now())
   reason               String?
-  status               String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status               String    @default("PENDING") // PENDING, APPROVED, REJECTED
   approvedBy           Employee? @relation("CareerProgressionApprover", fields: [approvedById], references: [id])
   approvedById         String?
   approvedAt           DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 // -----------------------------------------
@@ -383,54 +386,54 @@ model CareerProgression {
 
 // User Authentication
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
+  id                String         @id @default(uuid())
+  email             String         @unique
   password          String
   firstName         String
   lastName          String
-  profileImage      String?  // URL to profile image
-  isActive          Boolean  @default(true)
-  emailVerified     Boolean  @default(false)
+  profileImage      String? // URL to profile image
+  isActive          Boolean        @default(true)
+  emailVerified     Boolean        @default(false)
   lastLoginAt       DateTime?
-  passwordChangedAt DateTime @default(now())
-  employee          Employee? @relation(fields: [employeeId], references: [id])
-  employeeId        String?  @unique
+  passwordChangedAt DateTime       @default(now())
+  employee          Employee?      @relation(fields: [employeeId], references: [id])
+  employeeId        String?        @unique
   roles             UserRole[]
   refreshTokens     RefreshToken[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 // Roles
 model Role {
-  id          String      @id @default(uuid())
-  name        String      @unique
+  id          String           @id @default(uuid())
+  name        String           @unique
   description String?
   permissions RolePermission[]
   users       UserRole[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 // Permissions
 model Permission {
-  id          String          @id @default(uuid())
-  name        String          @unique
+  id          String           @id @default(uuid())
+  name        String           @unique
   description String?
-  resource    String          // e.g., 'employee', 'recruitment', 'attendance'
-  action      String          // e.g., 'create', 'read', 'update', 'delete'
+  resource    String // e.g., 'employee', 'recruitment', 'attendance'
+  action      String // e.g., 'create', 'read', 'update', 'delete'
   roles       RolePermission[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 // User-Role relationship
 model UserRole {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  role   Role   @relation(fields: [roleId], references: [id])
-  roleId String
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

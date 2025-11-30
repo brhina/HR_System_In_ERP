@@ -133,6 +133,12 @@ const EmployeeCard = ({ employee, onEdit, onDelete, onView }) => {
           <Building className="h-4 w-4 mr-2" />
           {employee.jobType}
         </div>
+        {employee.candidate && (
+          <div className="flex items-center text-blue-600 text-xs mt-2">
+            <Users className="h-3 w-3 mr-1" />
+            Hired from Recruitment
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -143,6 +149,7 @@ const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [hiredFromCandidateFilter, setHiredFromCandidateFilter] = useState('all'); // 'all', 'true', 'false'
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -151,17 +158,24 @@ const EmployeeList = () => {
 
   // Fetch employees
   const { data: employeesData, isLoading } = useQuery({
-    queryKey: queryKeys.employees.list({ search: searchTerm, status: statusFilter, department: departmentFilter }),
+    queryKey: queryKeys.employees.list({ 
+      search: searchTerm, 
+      status: statusFilter, 
+      department: departmentFilter,
+      fromCandidate: hiredFromCandidateFilter 
+    }),
     enabled: isAuthenticated && !!user,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('q', searchTerm);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (departmentFilter !== 'all') params.append('departmentId', departmentFilter);
+      if (hiredFromCandidateFilter !== 'all') params.append('fromCandidate', hiredFromCandidateFilter);
       
       const response = await apiClient.get(`/hr/employees?${params.toString()}`);
       return response.data.data;
     },
+    staleTime: 0, // Always fetch fresh data to ensure new employees appear immediately
   });
 
   // Fetch departments for filter
@@ -262,6 +276,12 @@ const EmployeeList = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Link to="/employees/managers">
+            <Button variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2" />
+              Manage Managers
+            </Button>
+          </Link>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -316,6 +336,16 @@ const EmployeeList = () => {
                 {dept.name}
               </option>
             ))}
+          </select>
+
+          <select
+            value={hiredFromCandidateFilter}
+            onChange={(e) => setHiredFromCandidateFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Employees</option>
+            <option value="true">Hired from Candidates</option>
+            <option value="false">Direct Hires</option>
           </select>
 
           <div className="flex items-center space-x-2">

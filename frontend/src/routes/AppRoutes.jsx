@@ -22,6 +22,7 @@ import HRDashboard from '../pages/dashboard/HRDashboard';
 import EmployeeList from '../pages/hr/EmployeeList';
 import EmployeeDetail from '../pages/hr/EmployeeDetail';
 import EmployeeForm from '../pages/hr/EmployeeForm';
+import ManagerManagement from '../pages/hr/ManagerManagement';
 import Attendance from '../pages/hr/Attendance';
 import LeaveRequests from '../pages/hr/LeaveRequests';
 import RecruitmentList from '../pages/hr/RecruitmentList';
@@ -207,6 +208,16 @@ function AppRoutes() {
           <ProtectedRoute requiredPermissions={['employee:update']}>
             <DashboardLayout>
               <EmployeeForm />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/employees/managers"
+        element={
+          <ProtectedRoute requiredPermissions={['employee:read']}>
+            <DashboardLayout>
+              <ManagerManagement />
             </DashboardLayout>
           </ProtectedRoute>
         }

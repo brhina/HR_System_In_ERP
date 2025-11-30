@@ -28,6 +28,7 @@ const CandidatesSection = ({
   onHire,
   onEditCandidate,
   onDeleteCandidate,
+  onViewCandidate,
   isLoading = false 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -205,6 +206,7 @@ const CandidatesSection = ({
                 onHire={onHire}
                 onEdit={onEditCandidate}
                 onDelete={onDeleteCandidate}
+                onView={onViewCandidate}
                 isLoading={isLoading}
               />
             ))}

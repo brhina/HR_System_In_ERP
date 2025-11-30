@@ -139,7 +139,17 @@ export async function createCandidateForJobWithGuards(jobId, data) {
     error.code = 'CANDIDATE_DUPLICATE';
     throw error;
   }
-  return repo.createCandidateForJob(jobId, data);
+  
+  // Normalize data: convert empty strings to null for optional fields
+  const normalizedData = {
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+    phone: data.phone && data.phone.trim() !== '' ? data.phone : null,
+    resumeUrl: data.resumeUrl && data.resumeUrl.trim() !== '' ? data.resumeUrl : null,
+  };
+  
+  return repo.createCandidateForJob(jobId, normalizedData);
 }
 
 // Public application (no auth required)
@@ -184,6 +194,15 @@ export async function updateCandidateStageWithGuards(candidateId, nextStage) {
     error.code = 'INVALID_STAGE';
     throw error;
   }
+  
+  // Prevent marking as HIRED through stage update - must use hireCandidate endpoint
+  if (nextStage === 'HIRED') {
+    const error = new Error('Cannot mark candidate as HIRED through stage update. Please use the hire candidate endpoint to create an employee record.');
+    error.statusCode = 400;
+    error.code = 'USE_HIRE_ENDPOINT';
+    throw error;
+  }
+  
   const candidate = await repo.findCandidateById(candidateId);
   if (!candidate) {
     const error = new Error(`Candidate with ID ${candidateId} not found`);
