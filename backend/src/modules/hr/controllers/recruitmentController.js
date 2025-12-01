@@ -320,11 +320,18 @@ export async function getPublicJobPosting(req, res, next) {
 
 export async function createPublicApplication(req, res, next) {
   try {
+    // Extract resumeFileName before validation (it's not part of the candidate schema)
+    const resumeFileName = req.file ? req.file.originalname : null;
+    
     const applicationData = {
       ...req.body,
       resumeUrl: req.file ? `/uploads/${req.file.filename}` : req.body.resumeUrl,
     };
     await validate(v.createCandidateSchema, { body: applicationData });
+    
+    // Add resumeFileName after validation for internal use
+    applicationData.resumeFileName = resumeFileName;
+    
     const candidate = await service.createPublicApplication(req.params.token, applicationData);
     res.status(201).json(response.success(candidate, "Application submitted successfully"));
   } catch (err) {

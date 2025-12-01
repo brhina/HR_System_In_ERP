@@ -174,7 +174,27 @@ export async function createPublicApplication(publicToken, data) {
     error.code = 'CANDIDATE_DUPLICATE';
     throw error;
   }
-  return repo.createCandidateForJob(job.id, data);
+  
+  // Extract resumeFileName before creating candidate (it's not a candidate field)
+  const { resumeFileName, ...candidateData } = data;
+  
+  // Create the candidate
+  const candidate = await repo.createCandidateForJob(job.id, candidateData);
+  
+  // If a resume was uploaded, create a CandidateDocument record
+  if (data.resumeUrl) {
+    // Use original filename if available, otherwise derive from URL
+    const documentName = resumeFileName || 
+      (data.resumeUrl.split('/').pop() || 'resume.pdf');
+    
+    await repo.createCandidateDocument(candidate.id, {
+      name: documentName,
+      fileUrl: data.resumeUrl,
+      documentType: 'RESUME'
+    });
+  }
+  
+  return candidate;
 }
 
 const VALID_STAGES = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"];

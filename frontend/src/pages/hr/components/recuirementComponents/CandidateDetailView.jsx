@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -35,8 +36,20 @@ const CandidateDetailView = ({
   isLoading = false,
   asModal = false
 }) => {
+  const navigate = useNavigate();
+  
   // Fetch documents using React Query
   const { data: documents = [], isLoading: isLoadingDocuments, refetch: refetchDocuments } = useCandidateDocuments(candidate?.id);
+  
+  // Handle back button click
+  const handleBack = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      // Default navigation: go back in history or to recruitment list
+      navigate(-1);
+    }
+  };
   
   // Document mutations
   const uploadDocumentMutation = useUploadCandidateDocument();
@@ -113,16 +126,15 @@ const CandidateDetailView = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          {asModal && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="p-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            className="p-2 hover:bg-gray-100"
+            title="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div className="h-12 w-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
             <User className="h-6 w-6 text-blue-700" />
           </div>
