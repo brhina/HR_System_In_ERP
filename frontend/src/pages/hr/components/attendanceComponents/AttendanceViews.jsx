@@ -18,13 +18,15 @@ import { Modal } from '../../../../components/ui/Modal';
 import { Table } from '../../../../components/ui/Table';
 import { 
   ATTENDANCE_STATUS, 
+  WORK_LOCATION_TYPE,
   formatTime, 
   formatDate, 
   formatDateTime,
   calculateWorkHours,
   calculateOvertime,
   isLate,
-  getAttendanceStatusColor 
+  getAttendanceStatusColor,
+  getLocationTypeColor
 } from '../../../../api/attendanceApi';
 
 /**
@@ -143,8 +145,8 @@ export const AttendanceTable = ({
       key: 'workHours',
       label: 'Work Hours',
       render: (record) => {
-        const workHours = calculateWorkHours(record.checkIn, record.checkOut);
-        const overtime = calculateOvertime(workHours);
+        const workHours = record.workHours || calculateWorkHours(record.checkIn, record.checkOut);
+        const overtime = record.overtime || calculateOvertime(workHours);
         
         return (
           <div>
@@ -152,19 +154,74 @@ export const AttendanceTable = ({
             {overtime > 0 && (
               <p className="text-xs text-orange-600 font-medium">+{overtime.toFixed(2)}h OT</p>
             )}
+            {record.breaks && record.breaks.length > 0 && (
+              <p className="text-xs text-blue-600 font-medium">{record.breaks.length} break(s)</p>
+            )}
           </div>
         );
       },
+    },
+    {
+      key: 'location',
+      label: 'Location',
+      render: (record) => (
+        <div>
+          {record.locationType && (
+            <span className={`px-2 py-1 rounded text-xs font-medium ${getLocationTypeColor(record.locationType)}`}>
+              {record.locationType}
+            </span>
+          )}
+          {record.location && (
+            <p className="text-xs text-gray-500 mt-1 truncate max-w-[150px]" title={record.location}>
+              {record.location}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      render: (record) => (
+        <div className="space-y-1">
+          {record.lateByMinutes && record.lateByMinutes > 0 && (
+            <p className="text-xs text-yellow-600 font-medium">
+              Late by {record.lateByMinutes} min
+            </p>
+          )}
+          {record.earlyByMinutes && record.earlyByMinutes > 0 && (
+            <p className="text-xs text-orange-600 font-medium">
+              Early by {record.earlyByMinutes} min
+            </p>
+          )}
+          {record.isRegularized && (
+            <p className="text-xs text-blue-600 font-medium">
+              Regularized
+            </p>
+          )}
+        </div>
+      ),
     },
     ...(showActions ? [{
       key: 'actions',
       label: 'Actions',
       render: (record) => (
         <div className="flex items-center space-x-2">
+          {record.breaks && record.breaks.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              title="View Breaks"
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <Coffee className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"
             onClick={() => onEdit(record)}
+            title="Edit Attendance"
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -173,6 +230,7 @@ export const AttendanceTable = ({
             variant="outline"
             className="text-red-600 hover:text-red-700"
             onClick={() => onDelete(record.id)}
+            title="Delete Attendance"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -274,6 +332,8 @@ export const AttendanceTable = ({
               <option value={ATTENDANCE_STATUS.ABSENT}>Absent</option>
               <option value={ATTENDANCE_STATUS.LATE}>Late</option>
               <option value={ATTENDANCE_STATUS.ON_LEAVE}>On Leave</option>
+              <option value={ATTENDANCE_STATUS.EARLY_DEPARTURE}>Early Departure</option>
+              <option value={ATTENDANCE_STATUS.HALF_DAY}>Half Day</option>
             </select>
           </div>
 
@@ -363,6 +423,10 @@ export const AttendanceCalendar = ({ attendance, onDateClick }) => {
         return 'bg-yellow-100 text-yellow-800';
       case ATTENDANCE_STATUS.ON_LEAVE:
         return 'bg-blue-100 text-blue-800';
+      case ATTENDANCE_STATUS.EARLY_DEPARTURE:
+        return 'bg-orange-100 text-orange-800';
+      case ATTENDANCE_STATUS.HALF_DAY:
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

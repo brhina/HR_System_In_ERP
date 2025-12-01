@@ -5,7 +5,11 @@ import {
   Plus,
   BarChart3,
   Wifi,
-  WifiOff
+  WifiOff,
+  Calendar,
+  Clock,
+  FileText,
+  Settings
 } from 'lucide-react';
 import { Button } from '../../../../components/ui/Button';
 
@@ -19,7 +23,10 @@ export const AttendanceHeader = ({
   isRefreshing, 
   onRefresh, 
   onShowRecordModal, 
-  onShowAnalyticsModal 
+  onShowAnalyticsModal,
+  onShowScheduleModal,
+  onShowRegularizationModal,
+  onShowHolidayModal
 }) => {
   return (
     <motion.div
@@ -43,23 +50,42 @@ export const AttendanceHeader = ({
         </div>
         <p className="text-gray-600">Track and manage employee attendance with real-time updates</p>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 flex-wrap gap-2">
         <Button
           variant="outline"
           onClick={onRefresh}
           disabled={isRefreshing}
+          size="sm"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
-        <Button onClick={onShowRecordModal}>
+        <Button onClick={onShowRecordModal} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Record Attendance
+          Record
         </Button>
-        <Button variant="outline" onClick={onShowAnalyticsModal}>
+        <Button variant="outline" onClick={onShowAnalyticsModal} size="sm">
           <BarChart3 className="h-4 w-4 mr-2" />
           Analytics
         </Button>
+        {onShowScheduleModal && (
+          <Button variant="outline" onClick={onShowScheduleModal} size="sm">
+            <Clock className="h-4 w-4 mr-2" />
+            Schedule
+          </Button>
+        )}
+        {onShowRegularizationModal && (
+          <Button variant="outline" onClick={onShowRegularizationModal} size="sm">
+            <FileText className="h-4 w-4 mr-2" />
+            Regularize
+          </Button>
+        )}
+        {onShowHolidayModal && (
+          <Button variant="outline" onClick={onShowHolidayModal} size="sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            Holidays
+          </Button>
+        )}
       </div>
     </motion.div>
   );

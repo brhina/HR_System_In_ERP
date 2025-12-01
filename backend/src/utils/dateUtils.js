@@ -15,7 +15,13 @@ export function endOfDay(value) {
 }
 
 export function dateRange(from, to) {
-  return { gte: from ? toDate(from) : undefined, lte: to ? toDate(to) : undefined };
+  // Handle empty strings as undefined
+  const fromDate = from && from !== '' ? toDate(from) : undefined;
+  const endDate = to && to !== '' ? toDate(to) : undefined;
+  return { 
+    ...(fromDate ? { gte: fromDate } : {}), 
+    ...(endDate ? { lte: endDate } : {}) 
+  };
 }
 
 

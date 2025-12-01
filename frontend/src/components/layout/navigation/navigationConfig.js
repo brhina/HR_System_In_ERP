@@ -12,6 +12,10 @@ import {
   Shield,
   LogOut,
   Building,
+  Coffee,
+  Calendar as CalendarIcon,
+  FileText as FileTextIcon,
+  MapPin,
 } from 'lucide-react';
 
 /**
@@ -67,6 +71,24 @@ export const NAVIGATION_ITEMS = [
         name: 'Leave Requests',
         href: '/attendance/leave',
         icon: Clock,
+        permission: 'attendance:read',
+      },
+      {
+        name: 'Work Schedule',
+        href: '/attendance/schedule',
+        icon: Clock,
+        permission: 'attendance:read',
+      },
+      {
+        name: 'Regularization',
+        href: '/attendance/regularization',
+        icon: FileTextIcon,
+        permission: 'attendance:read',
+      },
+      {
+        name: 'Holidays',
+        href: '/attendance/holidays',
+        icon: CalendarIcon,
         permission: 'attendance:read',
       },
     ],

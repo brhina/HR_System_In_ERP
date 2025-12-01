@@ -12,6 +12,11 @@ export { default as AttendanceContent, RecentAttendanceCards } from './Attendanc
 export { default as AttendanceModals } from './AttendanceModals';
 export { default as AttendanceEditForm } from './AttendanceEditForm';
 export { default as AttendanceRecordForm } from './AttendanceRecordForm';
+export { default as WorkScheduleManagement } from './WorkScheduleManagement';
+export { default as BreakManagement } from './BreakManagement';
+export { default as AttendanceRegularization } from './AttendanceRegularization';
+export { default as HolidayManagement } from './HolidayManagement';
+export { default as AttendanceQuickActions } from './AttendanceQuickActions';
 
 // Re-export individual components for easier imports
 export {

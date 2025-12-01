@@ -58,6 +58,28 @@ enum AttendanceStatus {
   ABSENT
   LATE
   ON_LEAVE
+  EARLY_DEPARTURE
+  HALF_DAY
+}
+
+enum WorkLocationType {
+  OFFICE
+  REMOTE
+  HYBRID
+  FIELD
+}
+
+enum RegularizationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BreakType {
+  LUNCH
+  COFFEE
+  PERSONAL
+  OTHER
 }
 
 enum InterviewStage {
@@ -121,6 +143,9 @@ model Employee {
   contracts              Contract[]
   attendances            Attendance[]
   leaves                 LeaveRequest[]
+  workSchedule           WorkSchedule?
+  attendanceRegularizations AttendanceRegularization[]
+  approvedRegularizations AttendanceRegularization[] @relation("ApprovedRegularizations")
   evaluations            Evaluation[] // evaluations about this employee
   givenEvaluations       Evaluation[]        @relation("Evaluator") // evaluations performed by this employee
   documents              EmployeeDocument[]
@@ -330,17 +355,34 @@ model Interview {
 // Time & Attendance
 // -----------------------------------------
 model Attendance {
-  id         String           @id @default(uuid())
-  employee   Employee         @relation(fields: [employeeId], references: [id])
-  employeeId String
-  date       DateTime
-  status     AttendanceStatus @default(PRESENT)
-  checkIn    DateTime?
-  checkOut   DateTime?
-  overtime   Float? // hours
-  workHours  Float? // calculated work hours
-  notes      String? // additional notes
-  location   String? // work location
+  id                    String           @id @default(uuid())
+  employee              Employee         @relation(fields: [employeeId], references: [id])
+  employeeId            String
+  date                  DateTime
+  status                AttendanceStatus @default(PRESENT)
+  checkIn               DateTime?
+  checkOut              DateTime?
+  expectedCheckIn       DateTime? // Expected check-in time from schedule
+  expectedCheckOut      DateTime? // Expected check-out time from schedule
+  lateByMinutes         Int? // Minutes late if late
+  earlyByMinutes        Int? // Minutes early if early departure
+  overtime              Float? // hours
+  workHours             Float? // calculated work hours (excluding breaks)
+  totalHours            Float? // total hours including breaks
+  notes                 String? // additional notes
+  location              String? // work location (address/name)
+  locationType          WorkLocationType? // OFFICE, REMOTE, HYBRID, FIELD
+  latitude              Float? // GPS latitude for geofencing
+  longitude             Float? // GPS longitude for geofencing
+  isRegularized         Boolean          @default(false) // Whether this was corrected via regularization
+  regularization        AttendanceRegularization? @relation(fields: [regularizationId], references: [id])
+  regularizationId      String? @unique // Link to regularization request if applicable
+  breaks                AttendanceBreak[] // Break times during the day
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([employeeId, date])
+  @@unique([employeeId, date])
 }
 
 model LeaveRequest {
@@ -354,6 +396,77 @@ model LeaveRequest {
   appliedAt    DateTime    @default(now())
   approvedBy   Employee?   @relation("ApprovedBy", fields: [approvedById], references: [id])
   approvedById String?
+  reason       String? // Reason for leave
+  daysCount    Float? // Calculated number of days
+}
+
+// Work Schedule - Defines expected working hours for employees
+model WorkSchedule {
+  id              String    @id @default(uuid())
+  employee        Employee  @relation(fields: [employeeId], references: [id])
+  employeeId      String    @unique
+  startTime       String    // Format: "HH:mm" (e.g., "09:00")
+  endTime         String    // Format: "HH:mm" (e.g., "18:00")
+  breakDuration   Int       @default(60) // Break duration in minutes
+  workingDays     Json      // Array of day numbers (0=Sunday, 1=Monday, etc.) or ["MONDAY", "TUESDAY", ...]
+  isFlexible      Boolean   @default(false) // Flexible working hours
+  gracePeriod     Int       @default(15) // Grace period in minutes for late arrival
+  timezone        String    @default("UTC") // Timezone for the schedule
+  effectiveFrom   DateTime  @default(now())
+  effectiveTo     DateTime? // Null means currently active
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Attendance Break - Tracks breaks during work hours
+model AttendanceBreak {
+  id          String    @id @default(uuid())
+  attendance  Attendance @relation(fields: [attendanceId], references: [id])
+  attendanceId String
+  type        BreakType @default(LUNCH)
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int? // Duration in minutes (calculated if endTime is set)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Attendance Regularization - Allows employees to request corrections
+model AttendanceRegularization {
+  id          String              @id @default(uuid())
+  employee    Employee            @relation(fields: [employeeId], references: [id])
+  employeeId  String
+  date        DateTime            // Date to be regularized
+  requestedCheckIn DateTime?      // Requested check-in time
+  requestedCheckOut DateTime?     // Requested check-out time
+  reason      String              // Reason for regularization
+  status      RegularizationStatus @default(PENDING)
+  approvedBy  Employee?           @relation("ApprovedRegularizations", fields: [approvedById], references: [id])
+  approvedById String?
+  approvedAt  DateTime?
+  rejectedReason String? // Reason if rejected
+  attendance  Attendance? // Reverse relation - attendance record created/updated from this regularization
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([employeeId, date])
+  @@index([status])
+}
+
+// Holiday Calendar - Company holidays
+model Holiday {
+  id          String    @id @default(uuid())
+  name        String
+  date        DateTime
+  type        String    @default("PUBLIC") // PUBLIC, COMPANY, REGIONAL
+  isRecurring Boolean   @default(false) // Recurring yearly
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([date, name])
+  @@index([date])
 }
 
 // Career Progression Tracking

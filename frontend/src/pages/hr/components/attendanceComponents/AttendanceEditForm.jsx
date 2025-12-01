@@ -15,7 +15,7 @@ import {
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
 import { Modal } from '../../../../components/ui/Modal';
-import { ATTENDANCE_STATUS } from '../../../../api/attendanceApi';
+import { ATTENDANCE_STATUS, WORK_LOCATION_TYPE } from '../../../../api/attendanceApi';
 
 /**
  * AttendanceEditForm Component
@@ -35,7 +35,9 @@ export const AttendanceEditForm = ({
     status: ATTENDANCE_STATUS.PRESENT,
     notes: '',
     location: '',
-    overtime: 0
+    locationType: WORK_LOCATION_TYPE.OFFICE,
+    overtime: 0,
+    workHours: 0
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -50,7 +52,9 @@ export const AttendanceEditForm = ({
         status: attendanceRecord.status || ATTENDANCE_STATUS.PRESENT,
         notes: attendanceRecord.notes || '',
         location: attendanceRecord.location || '',
-        overtime: attendanceRecord.overtime || 0
+        locationType: attendanceRecord.locationType || WORK_LOCATION_TYPE.OFFICE,
+        overtime: attendanceRecord.overtime || 0,
+        workHours: attendanceRecord.workHours || 0
       });
     }
   }, [attendanceRecord]);
@@ -339,9 +343,37 @@ export const AttendanceEditForm = ({
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder="Office, Remote, Client site..."
+              placeholder="Office address, Remote, Client site..."
             />
           </div>
+
+          {/* Location Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <MapPin className="h-4 w-4 inline mr-2" />
+              Location Type
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(WORK_LOCATION_TYPE).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, locationType: type }))}
+                  className={`p-2 rounded-lg border-2 transition-all text-sm ${
+                    formData.locationType === type
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Overtime and Work Hours */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           {/* Overtime */}
           <div>
@@ -365,6 +397,24 @@ export const AttendanceEditForm = ({
                 {errors.overtime}
               </p>
             )}
+          </div>
+
+          {/* Work Hours */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Clock className="h-4 w-4 inline mr-2" />
+              Work Hours
+            </label>
+            <Input
+              type="number"
+              name="workHours"
+              value={formData.workHours}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              min="0"
+              step="0.5"
+              placeholder="Auto-calculated if check-in/out provided"
+            />
           </div>
         </div>
 

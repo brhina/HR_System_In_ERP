@@ -19,13 +19,51 @@ export const attendanceApi = {
     return apiClient.get(`/hr/attendance/employee/${employeeId}`, { params });
   },
 
-  // Digital Check-in/out Operations
-  checkIn: (employeeId, data = {}) => {
-    return apiClient.post(`/hr/attendance/employee/${employeeId}/check-in`, data);
+  // Digital Check-in/out Operations (Enhanced with location)
+  checkIn: async (employeeId, data = {}) => {
+    // Get user's location if available
+    let locationData = {};
+    if (navigator.geolocation && !data.latitude && !data.longitude) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        locationData = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+      } catch (error) {
+        console.warn('Geolocation not available:', error);
+      }
+    }
+    
+    return apiClient.post(`/hr/attendance/employee/${employeeId}/check-in`, {
+      ...data,
+      ...locationData,
+    });
   },
 
-  checkOut: (employeeId, data = {}) => {
-    return apiClient.post(`/hr/attendance/employee/${employeeId}/check-out`, data);
+  checkOut: async (employeeId, data = {}) => {
+    // Get user's location if available
+    let locationData = {};
+    if (navigator.geolocation && !data.latitude && !data.longitude) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        locationData = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+      } catch (error) {
+        console.warn('Geolocation not available:', error);
+      }
+    }
+    
+    return apiClient.post(`/hr/attendance/employee/${employeeId}/check-out`, {
+      ...data,
+      ...locationData,
+    });
   },
 
   // Leave Management Operations
@@ -49,6 +87,74 @@ export const attendanceApi = {
   getAbsenceAnalytics: (params = {}) => {
     return apiClient.get('/hr/attendance/analytics/absence', { params });
   },
+
+  getAdvancedAttendanceSummary: (params = {}) => {
+    return apiClient.get('/hr/attendance/analytics/advanced', { params });
+  },
+
+  getAttendanceTrends: (params = {}) => {
+    return apiClient.get('/hr/attendance/analytics/trends', { params });
+  },
+
+  // Work Schedule Management
+  getWorkSchedule: (employeeId) => {
+    return apiClient.get(`/hr/attendance/schedule/${employeeId}`);
+  },
+
+  createWorkSchedule: (data) => {
+    return apiClient.post('/hr/attendance/schedule', data);
+  },
+
+  updateWorkSchedule: (employeeId, data) => {
+    return apiClient.put(`/hr/attendance/schedule/${employeeId}`, data);
+  },
+
+  deleteWorkSchedule: (employeeId) => {
+    return apiClient.delete(`/hr/attendance/schedule/${employeeId}`);
+  },
+
+  // Break Management
+  createBreak: (data) => {
+    return apiClient.post('/hr/attendance/break', data);
+  },
+
+  updateBreak: (id, data) => {
+    return apiClient.put(`/hr/attendance/break/${id}`, data);
+  },
+
+  deleteBreak: (id) => {
+    return apiClient.delete(`/hr/attendance/break/${id}`);
+  },
+
+  // Attendance Regularization
+  createRegularization: (data) => {
+    return apiClient.post('/hr/attendance/regularization', data);
+  },
+
+  updateRegularizationStatus: (id, data) => {
+    return apiClient.put(`/hr/attendance/regularization/${id}/status`, data);
+  },
+
+  listRegularizations: (params = {}) => {
+    return apiClient.get('/hr/attendance/regularization', { params });
+  },
+
+  // Holiday Management
+  createHoliday: (data) => {
+    return apiClient.post('/hr/attendance/holiday', data);
+  },
+
+  updateHoliday: (id, data) => {
+    return apiClient.put(`/hr/attendance/holiday/${id}`, data);
+  },
+
+  deleteHoliday: (id) => {
+    return apiClient.delete(`/hr/attendance/holiday/${id}`);
+  },
+
+  listHolidays: (params = {}) => {
+    return apiClient.get('/hr/attendance/holiday', { params });
+  },
 };
 
 // Attendance Constants
@@ -57,6 +163,34 @@ export const ATTENDANCE_STATUS = {
   ABSENT: 'ABSENT',
   LATE: 'LATE',
   ON_LEAVE: 'ON_LEAVE',
+  EARLY_DEPARTURE: 'EARLY_DEPARTURE',
+  HALF_DAY: 'HALF_DAY',
+};
+
+export const WORK_LOCATION_TYPE = {
+  OFFICE: 'OFFICE',
+  REMOTE: 'REMOTE',
+  HYBRID: 'HYBRID',
+  FIELD: 'FIELD',
+};
+
+export const BREAK_TYPE = {
+  LUNCH: 'LUNCH',
+  COFFEE: 'COFFEE',
+  PERSONAL: 'PERSONAL',
+  OTHER: 'OTHER',
+};
+
+export const REGULARIZATION_STATUS = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+};
+
+export const HOLIDAY_TYPE = {
+  PUBLIC: 'PUBLIC',
+  COMPANY: 'COMPANY',
+  REGIONAL: 'REGIONAL',
 };
 
 export const LEAVE_TYPE = {
@@ -81,6 +215,37 @@ export const getAttendanceStatusColor = (status) => {
     [ATTENDANCE_STATUS.ABSENT]: 'bg-red-100 text-red-800',
     [ATTENDANCE_STATUS.LATE]: 'bg-yellow-100 text-yellow-800',
     [ATTENDANCE_STATUS.ON_LEAVE]: 'bg-blue-100 text-blue-800',
+    [ATTENDANCE_STATUS.EARLY_DEPARTURE]: 'bg-orange-100 text-orange-800',
+    [ATTENDANCE_STATUS.HALF_DAY]: 'bg-purple-100 text-purple-800',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-800';
+};
+
+export const getLocationTypeColor = (type) => {
+  const colors = {
+    [WORK_LOCATION_TYPE.OFFICE]: 'bg-blue-100 text-blue-800',
+    [WORK_LOCATION_TYPE.REMOTE]: 'bg-green-100 text-green-800',
+    [WORK_LOCATION_TYPE.HYBRID]: 'bg-purple-100 text-purple-800',
+    [WORK_LOCATION_TYPE.FIELD]: 'bg-orange-100 text-orange-800',
+  };
+  return colors[type] || 'bg-gray-100 text-gray-800';
+};
+
+export const getBreakTypeColor = (type) => {
+  const colors = {
+    [BREAK_TYPE.LUNCH]: 'bg-orange-100 text-orange-800',
+    [BREAK_TYPE.COFFEE]: 'bg-amber-100 text-amber-800',
+    [BREAK_TYPE.PERSONAL]: 'bg-blue-100 text-blue-800',
+    [BREAK_TYPE.OTHER]: 'bg-gray-100 text-gray-800',
+  };
+  return colors[type] || 'bg-gray-100 text-gray-800';
+};
+
+export const getRegularizationStatusColor = (status) => {
+  const colors = {
+    [REGULARIZATION_STATUS.PENDING]: 'bg-yellow-100 text-yellow-800',
+    [REGULARIZATION_STATUS.APPROVED]: 'bg-green-100 text-green-800',
+    [REGULARIZATION_STATUS.REJECTED]: 'bg-red-100 text-red-800',
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 };

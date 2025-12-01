@@ -3,6 +3,9 @@ import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import AttendanceEditForm from './AttendanceEditForm';
 import AttendanceRecordForm from './AttendanceRecordForm';
+import WorkScheduleManagement from './WorkScheduleManagement';
+import AttendanceRegularization from './AttendanceRegularization';
+import HolidayManagement from './HolidayManagement';
 
 /**
  * AttendanceModals Component
@@ -12,16 +15,25 @@ export const AttendanceModals = ({
   showRecordModal, 
   showAnalyticsModal, 
   showEditModal,
+  showScheduleModal,
+  showRegularizationModal,
+  showHolidayModal,
   editingRecord,
   employees,
+  employeeId,
+  employeeName,
   onCloseRecordModal, 
   onCloseAnalyticsModal, 
   onCloseEditModal,
+  onCloseScheduleModal,
+  onCloseRegularizationModal,
+  onCloseHolidayModal,
   onEditAttendance,
   onRecordAttendance,
   isEditing,
   isRecording,
-  stats 
+  stats,
+  onUpdate
 }) => {
   return (
     <>
@@ -105,6 +117,35 @@ export const AttendanceModals = ({
         attendanceRecord={editingRecord}
         isLoading={isEditing}
       />
+
+      {/* Work Schedule Modal */}
+      {showScheduleModal && employeeId && (
+        <WorkScheduleManagement
+          isOpen={showScheduleModal}
+          onClose={onCloseScheduleModal}
+          employeeId={employeeId}
+          employeeName={employeeName}
+        />
+      )}
+
+      {/* Regularization Modal */}
+      {showRegularizationModal && employeeId && (
+        <AttendanceRegularization
+          isOpen={showRegularizationModal}
+          onClose={onCloseRegularizationModal}
+          employeeId={employeeId}
+          onUpdate={onUpdate}
+        />
+      )}
+
+      {/* Holiday Management Modal */}
+      {showHolidayModal && (
+        <HolidayManagement
+          isOpen={showHolidayModal}
+          onClose={onCloseHolidayModal}
+          onUpdate={onUpdate}
+        />
+      )}
     </>
   );
 };

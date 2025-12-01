@@ -25,6 +25,9 @@ const Attendance = () => {
     showRecordModal,
     showAnalyticsModal,
     showEditModal,
+    showScheduleModal,
+    showRegularizationModal,
+    showHolidayModal,
     editingRecord,
     isEditing,
     isRecording,
@@ -46,6 +49,9 @@ const Attendance = () => {
     setViewMode,
     setShowRecordModal,
     setShowAnalyticsModal,
+    setShowScheduleModal,
+    setShowRegularizationModal,
+    setShowHolidayModal,
     loadAttendanceData,
     handleCheckIn,
     handleCheckOut,
@@ -70,6 +76,9 @@ const Attendance = () => {
         onRefresh={loadAttendanceData}
         onShowRecordModal={() => setShowRecordModal(true)}
         onShowAnalyticsModal={() => setShowAnalyticsModal(true)}
+        onShowScheduleModal={user?.employeeId ? () => setShowScheduleModal(true) : null}
+        onShowRegularizationModal={user?.employeeId ? () => setShowRegularizationModal(true) : null}
+        onShowHolidayModal={() => setShowHolidayModal(true)}
       />
 
       {/* Network Status Alert */}
@@ -104,6 +113,12 @@ const Attendance = () => {
         onEditAttendance={handleOpenEditModal}
         onDateClick={handleDateClick}
         loading={loading}
+        user={user}
+        onShowSchedule={user?.employeeId ? () => setShowScheduleModal(true) : null}
+        onShowRegularization={user?.employeeId ? () => setShowRegularizationModal(true) : null}
+        onShowHoliday={() => setShowHolidayModal(true)}
+        onShowAnalytics={() => setShowAnalyticsModal(true)}
+        onUpdate={loadAttendanceData}
       />
 
       {/* Recent Attendance Cards */}
@@ -118,16 +133,25 @@ const Attendance = () => {
         showRecordModal={showRecordModal}
         showAnalyticsModal={showAnalyticsModal}
         showEditModal={showEditModal}
+        showScheduleModal={showScheduleModal}
+        showRegularizationModal={showRegularizationModal}
+        showHolidayModal={showHolidayModal}
         editingRecord={editingRecord}
         employees={employees}
+        employeeId={user?.employeeId}
+        employeeName={user ? `${user.firstName} ${user.lastName}` : ''}
         onCloseRecordModal={() => setShowRecordModal(false)}
         onCloseAnalyticsModal={() => setShowAnalyticsModal(false)}
         onCloseEditModal={handleCloseEditModal}
+        onCloseScheduleModal={() => setShowScheduleModal(false)}
+        onCloseRegularizationModal={() => setShowRegularizationModal(false)}
+        onCloseHolidayModal={() => setShowHolidayModal(false)}
         onEditAttendance={handleEditAttendance}
         onRecordAttendance={handleRecordAttendance}
         isEditing={isEditing}
         isRecording={isRecording}
         stats={stats}
+        onUpdate={loadAttendanceData}
       />
     </motion.div>
   );

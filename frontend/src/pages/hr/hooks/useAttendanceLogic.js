@@ -15,6 +15,9 @@ export const useAttendanceLogic = () => {
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showRegularizationModal, setShowRegularizationModal] = useState(false);
+  const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -232,6 +235,9 @@ export const useAttendanceLogic = () => {
     showRecordModal,
     showAnalyticsModal,
     showEditModal,
+    showScheduleModal,
+    showRegularizationModal,
+    showHolidayModal,
     editingRecord,
     isEditing,
     isRecording,
@@ -253,6 +259,9 @@ export const useAttendanceLogic = () => {
     setViewMode,
     setShowRecordModal,
     setShowAnalyticsModal,
+    setShowScheduleModal,
+    setShowRegularizationModal,
+    setShowHolidayModal,
     loadAttendanceData,
     handleCheckIn,
     handleCheckOut,

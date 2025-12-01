@@ -4,7 +4,8 @@ import {
   AttendanceTable,
   AttendanceCalendar,
   AttendanceAnalytics,
-  AttendanceCard
+  AttendanceCard,
+  AttendanceQuickActions
 } from './index';
 
 /**
@@ -18,7 +19,13 @@ export const AttendanceContent = ({
   absenceAnalytics, 
   onEditAttendance, 
   onDateClick, 
-  loading 
+  loading,
+  user,
+  onShowSchedule,
+  onShowRegularization,
+  onShowHoliday,
+  onShowAnalytics,
+  onUpdate
 }) => {
   const renderContent = () => {
     switch (viewMode) {
@@ -53,13 +60,34 @@ export const AttendanceContent = ({
     }
   };
 
+  // Get today's attendance for quick actions
+  const todayAttendance = attendance.find(a => {
+    const today = new Date();
+    const recordDate = new Date(a.date);
+    return today.toDateString() === recordDate.toDateString() && 
+           (user?.employeeId ? a.employeeId === user.employeeId : true);
+  });
+
   return (
     <motion.div
       key={viewMode}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="space-y-6"
     >
+      {/* Quick Actions for Today's Attendance */}
+      {todayAttendance && user?.employeeId && (
+        <AttendanceQuickActions
+          attendanceRecord={todayAttendance}
+          onUpdate={onUpdate}
+          onShowSchedule={onShowSchedule}
+          onShowRegularization={onShowRegularization}
+          onShowHoliday={onShowHoliday}
+          onShowAnalytics={onShowAnalytics}
+        />
+      )}
+      
       {renderContent()}
     </motion.div>
   );

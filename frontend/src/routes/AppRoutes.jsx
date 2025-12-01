@@ -25,6 +25,9 @@ import EmployeeForm from '../pages/hr/EmployeeForm';
 import ManagerManagement from '../pages/hr/ManagerManagement';
 import Attendance from '../pages/hr/Attendance';
 import LeaveRequests from '../pages/hr/LeaveRequests';
+import WorkSchedulePage from '../pages/hr/WorkSchedulePage';
+import AttendanceRegularizationPage from '../pages/hr/AttendanceRegularizationPage';
+import HolidaysPage from '../pages/hr/HolidaysPage';
 import RecruitmentList from '../pages/hr/RecruitmentList';
 import RecruitmentDetail from '../pages/hr/RecruitmentDetail';
 import JobCandidatesView from '../pages/hr/JobCandidatesView';
@@ -240,6 +243,36 @@ function AppRoutes() {
           <ProtectedRoute requiredPermissions={['attendance:read']}>
             <DashboardLayout>
               <LeaveRequests />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance/schedule"
+        element={
+          <ProtectedRoute requiredPermissions={['attendance:read']}>
+            <DashboardLayout>
+              <WorkSchedulePage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance/regularization"
+        element={
+          <ProtectedRoute requiredPermissions={['attendance:read']}>
+            <DashboardLayout>
+              <AttendanceRegularizationPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance/holidays"
+        element={
+          <ProtectedRoute requiredPermissions={['attendance:read']}>
+            <DashboardLayout>
+              <HolidaysPage />
             </DashboardLayout>
           </ProtectedRoute>
         }

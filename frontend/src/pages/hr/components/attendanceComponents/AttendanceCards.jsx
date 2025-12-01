@@ -14,18 +14,22 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  Zap
+  Zap,
+  Coffee,
+  FileText
 } from 'lucide-react';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
 import { Modal } from '../../../../components/ui/Modal';
 import { 
   ATTENDANCE_STATUS, 
+  WORK_LOCATION_TYPE,
   formatTime, 
   formatDate, 
   calculateWorkHours, 
   calculateOvertime,
-  isLate 
+  isLate,
+  getLocationTypeColor
 } from '../../../../api/attendanceApi';
 
 /**
@@ -276,6 +280,10 @@ export const AttendanceCard = ({ attendance, onEdit, showActions = true }) => {
         return <AlertCircle className="h-4 w-4 text-yellow-600" />;
       case ATTENDANCE_STATUS.ON_LEAVE:
         return <Calendar className="h-4 w-4 text-blue-600" />;
+      case ATTENDANCE_STATUS.EARLY_DEPARTURE:
+        return <AlertCircle className="h-4 w-4 text-orange-600" />;
+      case ATTENDANCE_STATUS.HALF_DAY:
+        return <Clock className="h-4 w-4 text-purple-600" />;
       default:
         return <Clock className="h-4 w-4 text-gray-600" />;
     }
@@ -358,22 +366,76 @@ export const AttendanceCard = ({ attendance, onEdit, showActions = true }) => {
                 <span className="text-sm text-gray-600">Work Hours:</span>
               </div>
               <p className="text-sm font-medium text-gray-900">
-                {workHours.toFixed(2)}h
+                {attendance.workHours ? attendance.workHours.toFixed(2) : workHours.toFixed(2)}h
               </p>
             </div>
-            {overtime > 0 && (
+            {(attendance.overtime || overtime > 0) && (
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <Zap className="h-4 w-4 text-orange-400" />
                   <span className="text-sm text-gray-600">Overtime:</span>
                 </div>
                 <p className="text-sm font-medium text-orange-600">
-                  {overtime.toFixed(2)}h
+                  {(attendance.overtime || overtime).toFixed(2)}h
                 </p>
               </div>
             )}
           </div>
         )}
+
+        {/* Location Information */}
+        {(attendance.location || attendance.locationType) && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center space-x-2 mb-2">
+              <MapPin className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-600">Location:</span>
+            </div>
+            {attendance.locationType && (
+              <span className={`inline-block px-2 py-1 rounded text-xs font-medium mb-1 ${getLocationTypeColor(attendance.locationType)}`}>
+                {attendance.locationType}
+              </span>
+            )}
+            {attendance.location && (
+              <p className="text-sm text-gray-700 mt-1">{attendance.location}</p>
+            )}
+          </div>
+        )}
+
+        {/* Additional Details */}
+        <div className="space-y-2 mb-4">
+          {attendance.lateByMinutes && attendance.lateByMinutes > 0 && (
+            <div className="flex items-center space-x-2 text-xs">
+              <AlertCircle className="h-3 w-3 text-yellow-600" />
+              <span className="text-yellow-600 font-medium">
+                Late by {attendance.lateByMinutes} minutes
+              </span>
+            </div>
+          )}
+          {attendance.earlyByMinutes && attendance.earlyByMinutes > 0 && (
+            <div className="flex items-center space-x-2 text-xs">
+              <AlertCircle className="h-3 w-3 text-orange-600" />
+              <span className="text-orange-600 font-medium">
+                Early departure by {attendance.earlyByMinutes} minutes
+              </span>
+            </div>
+          )}
+          {attendance.breaks && attendance.breaks.length > 0 && (
+            <div className="flex items-center space-x-2 text-xs">
+              <CoffeeIcon className="h-3 w-3 text-blue-600" />
+              <span className="text-blue-600 font-medium">
+                {attendance.breaks.length} break(s) recorded
+              </span>
+            </div>
+          )}
+          {attendance.isRegularized && (
+            <div className="flex items-center space-x-2 text-xs">
+              <FileText className="h-3 w-3 text-purple-600" />
+              <span className="text-purple-600 font-medium">
+                Regularized attendance
+              </span>
+            </div>
+          )}
+        </div>
 
         {showActions && (
           <div className="flex items-center justify-end space-x-2 pt-4 border-t border-gray-200">
